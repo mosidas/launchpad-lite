@@ -11,25 +11,30 @@ _ = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDict
 let launcher = LauncherPanel()
 registerHotKey(keyCode: UInt32(kVK_Space), modifiers: UInt32(cmdKey)) { launcher.toggle() }
 
-let ctrlOpt = UInt32(controlKey | optionKey)
-let windowHotKeys: [(Int, UInt32, WindowAction)] = [
-  (kVK_LeftArrow, ctrlOpt, .leftHalf),
-  (kVK_RightArrow, ctrlOpt, .rightHalf),
-  (kVK_UpArrow, ctrlOpt, .topHalf),
-  (kVK_DownArrow, ctrlOpt, .bottomHalf),
-  (kVK_Return, ctrlOpt, .maximize),
-  (kVK_ANSI_C, ctrlOpt, .centerThreeQuarters),
+let cmdShift = UInt32(cmdKey | shiftKey)
+let windowHotKeys: [(Int, WindowAction)] = [
+  (kVK_LeftArrow, .leftHalf),
+  (kVK_RightArrow, .rightHalf),
+  (kVK_UpArrow, .topHalf),
+  (kVK_DownArrow, .bottomHalf),
+  (kVK_ANSI_1, .topRight),
+  (kVK_ANSI_2, .topLeft),
+  (kVK_ANSI_3, .bottomLeft),
+  (kVK_ANSI_4, .bottomRight),
+  (kVK_Return, .maximize),
+  (kVK_ANSI_C, .centerThreeQuarters),
 ]
-for (keyCode, modifiers, action) in windowHotKeys {
-  registerHotKey(keyCode: UInt32(keyCode), modifiers: modifiers) { apply(action) }
+for (keyCode, action) in windowHotKeys {
+  registerHotKey(keyCode: UInt32(keyCode), modifiers: cmdShift) { apply(action) }
 }
 
-let systemHotKeys: [(Int, UInt32, @MainActor () -> Void)] = [
-  (kVK_ANSI_S, ctrlOpt, captureRegionToClipboard),
-  (kVK_ANSI_L, ctrlOpt, lockScreen),
-  (kVK_ANSI_L, ctrlOpt | UInt32(shiftKey), sleepNow),
+let otherHotKeys: [(Int, UInt32, @MainActor () -> Void)] = [
+  (kVK_LeftArrow, UInt32(controlKey | cmdKey), { moveToDisplay(.previous) }),
+  (kVK_RightArrow, UInt32(controlKey | cmdKey), { moveToDisplay(.next) }),
+  (kVK_ANSI_S, cmdShift, captureRegionToClipboard),
+  (kVK_ANSI_S, UInt32(cmdKey | optionKey), sleepNow),
 ]
-for (keyCode, modifiers, action) in systemHotKeys {
+for (keyCode, modifiers, action) in otherHotKeys {
   registerHotKey(keyCode: UInt32(keyCode), modifiers: modifiers, action: action)
 }
 

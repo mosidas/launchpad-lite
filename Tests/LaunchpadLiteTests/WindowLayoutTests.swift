@@ -21,46 +21,42 @@ import Testing
 private let screen = CGRect(x: 100, y: 50, width: 2400, height: 1200)
 
 @Test func halvesSplitScreen() {
-  let window = CGRect(x: 500, y: 300, width: 600, height: 400)
   #expect(
-    targetFrame(.leftHalf, window: window, screen: screen)
+    targetFrame(.leftHalf, screen: screen)
       == CGRect(x: 100, y: 50, width: 1200, height: 1200))
   #expect(
-    targetFrame(.rightHalf, window: window, screen: screen)
+    targetFrame(.rightHalf, screen: screen)
       == CGRect(x: 1300, y: 50, width: 1200, height: 1200))
   #expect(
-    targetFrame(.topHalf, window: window, screen: screen)
+    targetFrame(.topHalf, screen: screen)
       == CGRect(x: 100, y: 50, width: 2400, height: 600))
   #expect(
-    targetFrame(.bottomHalf, window: window, screen: screen)
+    targetFrame(.bottomHalf, screen: screen)
       == CGRect(x: 100, y: 650, width: 2400, height: 600))
 }
 
 @Test func maximizeFillsScreen() {
-  let window = CGRect(x: 500, y: 300, width: 600, height: 400)
-  #expect(targetFrame(.maximize, window: window, screen: screen) == screen)
+  #expect(targetFrame(.maximize, screen: screen) == screen)
 }
 
 @Test func quartersSplitScreen() {
-  let window = CGRect(x: 500, y: 300, width: 600, height: 400)
   #expect(
-    targetFrame(.topLeft, window: window, screen: screen)
+    targetFrame(.topLeft, screen: screen)
       == CGRect(x: 100, y: 50, width: 1200, height: 600))
   #expect(
-    targetFrame(.topRight, window: window, screen: screen)
+    targetFrame(.topRight, screen: screen)
       == CGRect(x: 1300, y: 50, width: 1200, height: 600))
   #expect(
-    targetFrame(.bottomLeft, window: window, screen: screen)
+    targetFrame(.bottomLeft, screen: screen)
       == CGRect(x: 100, y: 650, width: 1200, height: 600))
   #expect(
-    targetFrame(.bottomRight, window: window, screen: screen)
+    targetFrame(.bottomRight, screen: screen)
       == CGRect(x: 1300, y: 650, width: 1200, height: 600))
 }
 
-@Test func centerThreeQuartersIgnoresWindowSize() {
-  let window = CGRect(x: 0, y: 0, width: 600, height: 400)
+@Test func centerThreeQuartersCentersOnScreen() {
   #expect(
-    targetFrame(.centerThreeQuarters, window: window, screen: screen)
+    targetFrame(.centerThreeQuarters, screen: screen)
       == CGRect(x: 400, y: 200, width: 1800, height: 900))
 }
 

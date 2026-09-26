@@ -12,8 +12,8 @@ enum WindowAction {
   case maximize, centerThreeQuarters
 }
 
-/// action を適用したあとのウィンドウの矩形を返す。window と screen(可視領域)はどちらも AX 座標。
-func targetFrame(_ action: WindowAction, window: CGRect, screen: CGRect) -> CGRect {
+/// action を適用したあとのウィンドウの矩形を返す。screen は可視領域で、AX 座標。
+func targetFrame(_ action: WindowAction, screen: CGRect) -> CGRect {
   let halfW = screen.width / 2
   let halfH = screen.height / 2
   switch action {
