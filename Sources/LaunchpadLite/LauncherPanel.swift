@@ -4,12 +4,15 @@ import SwiftUI
 /// ホットキーで開閉するランチャー。開くたびにアプリの一覧を取り直す。
 final class LauncherPanel: NSPanel, NSWindowDelegate {
   private static let size = NSSize(width: 600, height: 360)
+  /// 開く前に前面だったアプリ。閉じたときに前面へ戻す。
+  private var previousApp: NSRunningApplication?
 
   init() {
     super.init(
       contentRect: NSRect(origin: .zero, size: Self.size), styleMask: [.borderless],
       backing: .buffered, defer: false)
     level = .floating
+    collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
     isOpaque = false
     backgroundColor = .clear
     hasShadow = true
@@ -20,7 +23,7 @@ final class LauncherPanel: NSPanel, NSWindowDelegate {
 
   func toggle() {
     if isVisible {
-      orderOut(nil)
+      close(restoringFocus: true)
       return
     }
     // 新しいビューに差し替えて、入力と選択を空に戻す。
@@ -30,16 +33,32 @@ final class LauncherPanel: NSPanel, NSWindowDelegate {
         onLaunch: { [weak self] app in
           NSWorkspace.shared.openApplication(
             at: app.url, configuration: NSWorkspace.OpenConfiguration(), completionHandler: nil)
-          self?.orderOut(nil)
+          // 起動したアプリが前面になるので、元のアプリは戻さない。
+          self?.close(restoringFocus: false)
         },
-        onClose: { [weak self] in self?.orderOut(nil) }))
+        onClose: { [weak self] in self?.close(restoringFocus: true) }))
     center()
+    previousApp = NSWorkspace.shared.frontmostApplication
     NSApp.activate()
     makeKeyAndOrderFront(nil)
   }
 
+  /// 他のアプリへ移ってキーを失ったときは、移った先を上書きしないよう元のアプリを戻さない。
   func windowDidResignKey(_ notification: Notification) {
+    close(restoringFocus: false)
+  }
+
+  /// すべての閉じる経路が通る。前面を元のアプリへ返し、返せなければ自アプリを隠す。
+  private func close(restoringFocus: Bool) {
+    guard isVisible else { return }
+    let previous = previousApp
+    previousApp = nil
     orderOut(nil)
+    if restoringFocus, let previous, !previous.isTerminated {
+      previous.activate()
+    } else {
+      NSApp.hide(nil)
+    }
   }
 }
 
