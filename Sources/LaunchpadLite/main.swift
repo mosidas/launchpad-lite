@@ -32,4 +32,13 @@ for (keyCode, modifiers, action) in windowHotKeys {
   registerHotKey(keyCode: UInt32(keyCode), modifiers: modifiers) { apply(action) }
 }
 
+let systemHotKeys: [(Int, UInt32, @MainActor () -> Void)] = [
+  (kVK_ANSI_S, ctrlOpt, captureRegionToClipboard),
+  (kVK_ANSI_L, ctrlOpt, lockScreen),
+  (kVK_ANSI_L, ctrlOpt | UInt32(shiftKey), sleepNow),
+]
+for (keyCode, modifiers, action) in systemHotKeys {
+  registerHotKey(keyCode: UInt32(keyCode), modifiers: modifiers, action: action)
+}
+
 app.run()
