@@ -1,0 +1,41 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build-macos:
+    # ランナーのアーキテクチャ(Apple Silicon)向けにビルドする。アドホック署名のみで公証していない。
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Show Swift version
+        run: swift --version
+
+      - name: Test
+        run: scripts/test.sh
+
+      - name: Build application
+        run: scripts/bundle.sh
+
+      - name: Create zip
+        run: ditto -c -k --keepParent dist/LaunchpadLite.app "dist/LaunchpadLite-${{ github.ref_name }}.zip"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v3
+        with:
+          files: |
+            dist/LaunchpadLite-${{ github.ref_name }}.zip
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
