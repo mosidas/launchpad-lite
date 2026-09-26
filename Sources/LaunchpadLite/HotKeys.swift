@@ -1,4 +1,5 @@
 import Carbon.HIToolbox
+import Foundation
 
 @MainActor private var hotKeyActions: [UInt32: @MainActor () -> Void] = [:]
 
@@ -25,5 +26,5 @@ func registerHotKey(keyCode: UInt32, modifiers: UInt32, action: @escaping @MainA
   let status = RegisterEventHotKey(
     keyCode, modifiers, EventHotKeyID(signature: OSType(0x4C50_4C54), id: id),
     GetApplicationEventTarget(), 0, &ref)
-  if status != noErr { print("ホットキーを登録できない(keyCode \(keyCode)、status \(status))") }
+  if status != noErr { NSLog("ホットキーを登録できない(keyCode \(keyCode)、status \(status))") }
 }

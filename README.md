@@ -12,6 +12,8 @@ Raycast の代わりに使う、最小限の macOS ランチャー。アプリ�
 
 定義は `Sources/LaunchpadLite/main.swift` にある。変えるときはここを直す。
 
+⌘Space を使うには、システム設定 > キーボード > キーボードショートカット > Spotlight で Spotlight のショートカットを先に無効にしておく。
+
 | キー | 動作 |
 | :- | :- |
 | ⌘Space | ランチャーを開く・閉じる |
