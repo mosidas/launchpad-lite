@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 
 /// 外部コマンドを起動し、終了を待たずに戻る。
 func run(_ path: String, _ args: [String]) {
@@ -8,7 +8,11 @@ func run(_ path: String, _ args: [String]) {
   try? process.run()
 }
 
-/// 範囲を選択してスクリーンショットを撮り、クリップボードへ入れる。
-func captureRegionToClipboard() { run("/usr/sbin/screencapture", ["-ic"]) }
+/// スクリーンショットのツールバーを開く(⌘⇧5 と同じ)。保存先や形式は OS の設定に従う。
+func openScreenshotToolbar() {
+  NSWorkspace.shared.openApplication(
+    at: URL(fileURLWithPath: "/System/Applications/Utilities/Screenshot.app"),
+    configuration: NSWorkspace.OpenConfiguration(), completionHandler: nil)
+}
 
 func sleepNow() { run("/usr/bin/pmset", ["sleepnow"]) }

@@ -31,7 +31,7 @@ for (keyCode, action) in windowHotKeys {
 let otherHotKeys: [(Int, UInt32, @MainActor () -> Void)] = [
   (kVK_LeftArrow, UInt32(controlKey | cmdKey), { moveToDisplay(.previous) }),
   (kVK_RightArrow, UInt32(controlKey | cmdKey), { moveToDisplay(.next) }),
-  (kVK_ANSI_S, cmdShift, captureRegionToClipboard),
+  (kVK_ANSI_S, cmdShift, openScreenshotToolbar),
   (kVK_ANSI_S, UInt32(cmdKey | optionKey), sleepNow),
 ]
 for (keyCode, modifiers, action) in otherHotKeys {
