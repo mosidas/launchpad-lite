@@ -4,7 +4,14 @@ Raycast の代わりに使う、最小限の macOS ランチャー。アプリ�
 
 ## 使い方
 
-`scripts/bundle.sh` でビルドし、できた `dist/LaunchpadLite.app` を `/Applications` へコピーして開く。Dock とメニューバーには何も出ない。
+[Releases](https://github.com/mosidas/launchpad-lite/releases) から `LaunchpadLite-<バージョン>.zip` をダウンロードして展開し、`LaunchpadLite.app` を `/Applications` へ移して開く。Apple Silicon 向けのビルドである。Dock とメニューバーには何も出ない。
+
+配布物はアドホック署名だけで公証していないため、初回の起動は Gatekeeper に止められる。次のどちらかで起動を許可する。
+
+- ターミナルで `xattr -d com.apple.quarantine /Applications/LaunchpadLite.app` を実行し、隔離属性を外す。
+- Finder で `LaunchpadLite.app` を右クリックし、「開く」を押す。
+
+ソースからビルドするときは、`scripts/bundle.sh` を実行し、できた `dist/LaunchpadLite.app` を `/Applications` へコピーして開く。
 
 ログイン時に自動で起動するには、システム設定 > 一般 > ログイン項目に `LaunchpadLite.app` を手で追加する。
 
