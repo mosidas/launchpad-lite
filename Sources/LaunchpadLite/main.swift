@@ -18,15 +18,7 @@ let windowHotKeys: [(Int, UInt32, WindowAction)] = [
   (kVK_UpArrow, ctrlOpt, .topHalf),
   (kVK_DownArrow, ctrlOpt, .bottomHalf),
   (kVK_Return, ctrlOpt, .maximize),
-  (kVK_ANSI_C, ctrlOpt, .center),
-  (kVK_LeftArrow, ctrlOpt | UInt32(shiftKey), .narrow),
-  (kVK_RightArrow, ctrlOpt | UInt32(shiftKey), .widen),
-  (kVK_UpArrow, ctrlOpt | UInt32(shiftKey), .shorter),
-  (kVK_DownArrow, ctrlOpt | UInt32(shiftKey), .taller),
-  (kVK_LeftArrow, ctrlOpt | UInt32(cmdKey), .moveLeft),
-  (kVK_RightArrow, ctrlOpt | UInt32(cmdKey), .moveRight),
-  (kVK_UpArrow, ctrlOpt | UInt32(cmdKey), .moveUp),
-  (kVK_DownArrow, ctrlOpt | UInt32(cmdKey), .moveDown),
+  (kVK_ANSI_C, ctrlOpt, .centerThreeQuarters),
 ]
 for (keyCode, modifiers, action) in windowHotKeys {
   registerHotKey(keyCode: UInt32(keyCode), modifiers: modifiers) { apply(action) }

@@ -17,7 +17,7 @@ import Testing
       == CGRect(x: 0, y: -1080, width: 1920, height: 1080))
 }
 
-// 原点がゼロでない副画面を想定する。刻みは横 100、縦 50。
+// 原点がゼロでない副画面を想定する。
 private let screen = CGRect(x: 100, y: 50, width: 2400, height: 1200)
 
 @Test func halvesSplitScreen() {
@@ -41,42 +41,48 @@ private let screen = CGRect(x: 100, y: 50, width: 2400, height: 1200)
   #expect(targetFrame(.maximize, window: window, screen: screen) == screen)
 }
 
-@Test func centerKeepsSize() {
+@Test func quartersSplitScreen() {
+  let window = CGRect(x: 500, y: 300, width: 600, height: 400)
+  #expect(
+    targetFrame(.topLeft, window: window, screen: screen)
+      == CGRect(x: 100, y: 50, width: 1200, height: 600))
+  #expect(
+    targetFrame(.topRight, window: window, screen: screen)
+      == CGRect(x: 1300, y: 50, width: 1200, height: 600))
+  #expect(
+    targetFrame(.bottomLeft, window: window, screen: screen)
+      == CGRect(x: 100, y: 650, width: 1200, height: 600))
+  #expect(
+    targetFrame(.bottomRight, window: window, screen: screen)
+      == CGRect(x: 1300, y: 650, width: 1200, height: 600))
+}
+
+@Test func centerThreeQuartersIgnoresWindowSize() {
   let window = CGRect(x: 0, y: 0, width: 600, height: 400)
   #expect(
-    targetFrame(.center, window: window, screen: screen)
-      == CGRect(x: 1000, y: 450, width: 600, height: 400))
+    targetFrame(.centerThreeQuarters, window: window, screen: screen)
+      == CGRect(x: 400, y: 200, width: 1800, height: 900))
 }
 
-@Test func centerShrinksWindowLargerThanScreen() {
-  let window = CGRect(x: 0, y: 0, width: 3000, height: 1500)
-  #expect(targetFrame(.center, window: window, screen: screen) == screen)
-}
+// 主画面 2000x1000 から、右隣で上に 200 ずれた 1000x800 の画面へ移す。
+private let fromScreen = CGRect(x: 0, y: 0, width: 2000, height: 1000)
+private let toScreen = CGRect(x: 2000, y: -200, width: 1000, height: 800)
 
-@Test func widenKeepsCenter() {
-  let window = CGRect(x: 1000, y: 400, width: 600, height: 400)
+@Test func frameMovedKeepsRatio() {
+  let window = CGRect(x: 500, y: 250, width: 800, height: 400)
   #expect(
-    targetFrame(.widen, window: window, screen: screen)
-      == CGRect(x: 950, y: 400, width: 700, height: 400))
+    frameMoved(window: window, from: fromScreen, to: toScreen)
+      == CGRect(x: 2250, y: 0, width: 400, height: 320))
 }
 
-@Test func widenAtLeftEdgeGrowsRight() {
-  let window = CGRect(x: 100, y: 400, width: 600, height: 400)
+@Test func frameMovedPushesBackInside() {
+  let window = CGRect(x: 1800, y: 900, width: 600, height: 300)
   #expect(
-    targetFrame(.widen, window: window, screen: screen)
-      == CGRect(x: 100, y: 400, width: 700, height: 400))
+    frameMoved(window: window, from: fromScreen, to: toScreen)
+      == CGRect(x: 2700, y: 360, width: 300, height: 240))
 }
 
-@Test func narrowStopsAtMinimum() {
-  let window = CGRect(x: 1000, y: 400, width: 250, height: 400)
-  #expect(
-    targetFrame(.narrow, window: window, screen: screen)
-      == CGRect(x: 1025, y: 400, width: 200, height: 400))
-}
-
-@Test func moveLeftStopsAtScreenEdge() {
-  let window = CGRect(x: 150, y: 400, width: 600, height: 400)
-  #expect(
-    targetFrame(.moveLeft, window: window, screen: screen)
-      == CGRect(x: 100, y: 400, width: 600, height: 400))
+@Test func frameMovedCapsSizeAtScreen() {
+  let window = CGRect(x: -100, y: 0, width: 2400, height: 1200)
+  #expect(frameMoved(window: window, from: fromScreen, to: toScreen) == toScreen)
 }
