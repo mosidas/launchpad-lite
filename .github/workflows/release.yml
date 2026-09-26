@@ -20,7 +20,6 @@ jobs:
       - name: Show Swift version
         run: swift --version
 
-      # scripts/test.sh が CLT の検索パスで失敗するときは、Xcode 入りのランナーでは素の `swift test` で足りる。
       - name: Test
         run: scripts/test.sh
 
