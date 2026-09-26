@@ -51,6 +51,17 @@ private func rankedNames(_ query: String, _ names: [String]) -> [String] {
     try fm.createDirectory(
       at: root.appendingPathComponent(path), withIntermediateDirectories: true)
   }
+  // macOS 26 の /Applications/Safari.app と同じく、hidden フラグ付きの .app への symlink
+  let target = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".app")
+  defer { try? fm.removeItem(at: target) }
+  try fm.createDirectory(at: target, withIntermediateDirectories: true)
+  var link = root.appendingPathComponent("D.app")
+  try fm.createSymbolicLink(at: link, withDestinationURL: target)
+  var hidden = URLResourceValues()
+  hidden.isHidden = true
+  try link.setResourceValues(hidden)
+  link.removeAllCachedResourceValues()
+  try #require(link.resourceValues(forKeys: [.isHiddenKey]).isHidden == true)
   let names = scanApplications(in: [root, root.appendingPathComponent("missing")]).map(\.name)
-  #expect(names.sorted() == ["A", "B"])
+  #expect(names.sorted() == ["A", "B", "D"])
 }

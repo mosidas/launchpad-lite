@@ -67,7 +67,7 @@ func scanApplications(in dirs: [URL]) -> [AppEntry] {
     guard
       let items = FileManager.default.enumerator(
         at: dir, includingPropertiesForKeys: nil,
-        options: [.skipsPackageDescendants, .skipsHiddenFiles])
+        options: .skipsPackageDescendants)
     else { continue }
     for case let url as URL in items where url.pathExtension == "app" {
       let name = url.deletingPathExtension().lastPathComponent
