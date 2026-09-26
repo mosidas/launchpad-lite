@@ -8,8 +8,8 @@ Raycast の代わりに使う、最小限の macOS ランチャー。アプリ�
 
 配布物はアドホック署名だけで公証していないため、初回の起動は Gatekeeper に止められる。次のどちらかで起動を許可する。
 
-- ターミナルで `xattr -d com.apple.quarantine /Applications/LaunchpadLite.app` を実行し、隔離属性を外す。
-- Finder で `LaunchpadLite.app` を右クリックし、「開く」を押す。
+- ターミナルで `xattr -dr com.apple.quarantine /Applications/LaunchpadLite.app` を実行し、隔離属性を外す。
+- 一度開いてブロックされたあと、システム設定 > プライバシーとセキュリティ の下部にある「このまま開く」を押す(macOS 14 では Finder で右クリックして「開く」でもよい)。
 
 ソースからビルドするときは、`scripts/bundle.sh` を実行し、できた `dist/LaunchpadLite.app` を `/Applications` へコピーして開く。
 
