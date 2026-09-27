@@ -31,4 +31,17 @@ performHotKey = { action in
 }
 registerAllHotKeys()
 
+applyPointerSettings(currentMouseSettings)
+// ponytail: マウスの再接続やスリープ復帰で OS がシステム設定の値を入れ直すので、5 秒ごとに書き直す。
+// 反映まで最大 5 秒かかる。気になれば IOHIDManager の接続通知で書き直す形に引き上げる。
+// ponytail: tap は未許可の間は作れないので、同じ間隔で作り直しを試みる。許可後に再起動しなくて済む。
+Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in
+  MainActor.assumeIsolated {
+    applyPointerSettings(currentMouseSettings)
+    startMouseEventTap()
+  }
+}
+
+startMouseEventTap()
+
 app.run()

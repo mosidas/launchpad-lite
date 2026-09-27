@@ -2,7 +2,7 @@ import AppKit
 import Carbon.HIToolbox
 import SwiftUI
 
-@MainActor private var settingsWindow: NSWindow?
+@MainActor var settingsWindow: NSWindow?
 
 /// 設定ウィンドウを開く。ウィンドウは 1 つだけ作って使い回す。
 @MainActor
@@ -18,7 +18,11 @@ func showSettings() {
       return window
     }()
   // 開くたびにビューを作り直し、保存値を読み直す。
-  window.contentView = NSHostingView(rootView: SettingsView())
+  window.contentView = NSHostingView(
+    rootView: TabView {
+      SettingsView().tabItem { Text("ホットキー") }
+      MouseSettingsView().tabItem { Text("マウス") }
+    })
   window.center()
   NSApp.activate()
   window.makeKeyAndOrderFront(nil)
@@ -73,9 +77,11 @@ private struct SettingsView: View {
     ) { _ in stopRecording() }
   }
 
-  /// 記録中は全ホットキーを外す。外さないと、記録しようとしたキーで動作が先に起きる。
+  /// 記録中は全ホットキーとマウスの tap を止める。止めないと、記録しようとしたキーや、
+  /// ショートカットを割り当てたマウスボタンの送出するキーで、動作が先に起きる。
   private func startRecording(_ action: HotKeyAction) {
     stopRecording()
+    setMouseEventTapEnabled(false)
     unregisterAllHotKeys()
     recording = action
     monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
@@ -98,6 +104,7 @@ private struct SettingsView: View {
     NSEvent.removeMonitor(monitor)
     self.monitor = nil
     recording = nil
+    setMouseEventTapEnabled(true)
     failed = Set(registerAllHotKeys())
   }
 }
