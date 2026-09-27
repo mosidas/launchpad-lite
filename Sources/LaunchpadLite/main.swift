@@ -32,15 +32,25 @@ performHotKey = { action in
 registerAllHotKeys()
 
 applyPointerSettings(currentMouseSettings)
+applyKeyRemaps(currentKeyboardSettings)
 // ponytail: マウスの再接続やスリープ復帰で OS がシステム設定の値を入れ直すので、5 秒ごとに書き直す。
+// キーボードの再接続・追加で置き換えが外れるのも、同じ間隔で書き直す。
 // 反映まで最大 5 秒かかる。気になれば IOHIDManager の接続通知で書き直す形に引き上げる。
 // ponytail: tap は未許可の間は作れず、許可を取り消すと無効になる。同じ間隔で作り直しを試み、
 // 未許可・取り消しのどちらでも許可後 5 秒以内に作り直す。再起動しなくて済む。
 Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in
   MainActor.assumeIsolated {
     applyPointerSettings(currentMouseSettings)
+    applyKeyRemaps(currentKeyboardSettings)
     restartMouseEventTapIfDisabled()
   }
+}
+
+// 終了後もキーが置き換わったままだと戻す手段が無いので、終了時に解除する。
+NotificationCenter.default.addObserver(
+  forName: NSApplication.willTerminateNotification, object: nil, queue: .main
+) { _ in
+  MainActor.assumeIsolated { setKeyRemapsEnabled(false) }
 }
 
 startMouseEventTap()
