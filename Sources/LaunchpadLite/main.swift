@@ -1,5 +1,4 @@
 import AppKit
-import Carbon.HIToolbox
 
 let app = NSApplication.shared
 app.setActivationPolicy(.accessory)
@@ -9,33 +8,25 @@ app.setActivationPolicy(.accessory)
 _ = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
 
 let launcher = LauncherPanel()
-registerHotKey(keyCode: UInt32(kVK_Space), modifiers: UInt32(cmdKey)) { launcher.toggle() }
-
-let cmdShift = UInt32(cmdKey | shiftKey)
-let windowHotKeys: [(Int, WindowAction)] = [
-  (kVK_LeftArrow, .leftHalf),
-  (kVK_RightArrow, .rightHalf),
-  (kVK_UpArrow, .topHalf),
-  (kVK_DownArrow, .bottomHalf),
-  (kVK_ANSI_1, .topRight),
-  (kVK_ANSI_2, .topLeft),
-  (kVK_ANSI_3, .bottomLeft),
-  (kVK_ANSI_4, .bottomRight),
-  (kVK_Return, .maximize),
-  (kVK_ANSI_C, .centerThreeQuarters),
-]
-for (keyCode, action) in windowHotKeys {
-  registerHotKey(keyCode: UInt32(keyCode), modifiers: cmdShift) { apply(action) }
+performHotKey = { action in
+  switch action {
+  case .launcher: launcher.toggle()
+  case .screenshot: openScreenshotToolbar()
+  case .leftHalf: apply(.leftHalf)
+  case .rightHalf: apply(.rightHalf)
+  case .topHalf: apply(.topHalf)
+  case .bottomHalf: apply(.bottomHalf)
+  case .topRight: apply(.topRight)
+  case .topLeft: apply(.topLeft)
+  case .bottomLeft: apply(.bottomLeft)
+  case .bottomRight: apply(.bottomRight)
+  case .maximize: apply(.maximize)
+  case .centerThreeQuarters: apply(.centerThreeQuarters)
+  case .previousDisplay: moveToDisplay(.previous)
+  case .nextDisplay: moveToDisplay(.next)
+  case .sleep: sleepNow()
+  }
 }
-
-let otherHotKeys: [(Int, UInt32, @MainActor () -> Void)] = [
-  (kVK_LeftArrow, UInt32(controlKey | cmdKey), { moveToDisplay(.previous) }),
-  (kVK_RightArrow, UInt32(controlKey | cmdKey), { moveToDisplay(.next) }),
-  (kVK_ANSI_S, cmdShift, openScreenshotToolbar),
-  (kVK_ANSI_S, UInt32(cmdKey | optionKey), sleepNow),
-]
-for (keyCode, modifiers, action) in otherHotKeys {
-  registerHotKey(keyCode: UInt32(keyCode), modifiers: modifiers, action: action)
-}
+registerAllHotKeys()
 
 app.run()
