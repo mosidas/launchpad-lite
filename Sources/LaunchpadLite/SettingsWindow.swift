@@ -77,9 +77,11 @@ private struct SettingsView: View {
     ) { _ in stopRecording() }
   }
 
-  /// 記録中は全ホットキーを外す。外さないと、記録しようとしたキーで動作が先に起きる。
+  /// 記録中は全ホットキーとマウスの tap を止める。止めないと、記録しようとしたキーや、
+  /// ショートカットを割り当てたマウスボタンの送出するキーで、動作が先に起きる。
   private func startRecording(_ action: HotKeyAction) {
     stopRecording()
+    setMouseEventTapEnabled(false)
     unregisterAllHotKeys()
     recording = action
     monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
@@ -102,6 +104,7 @@ private struct SettingsView: View {
     NSEvent.removeMonitor(monitor)
     self.monitor = nil
     recording = nil
+    setMouseEventTapEnabled(true)
     failed = Set(registerAllHotKeys())
   }
 }
