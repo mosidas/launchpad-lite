@@ -70,7 +70,8 @@ private func withDefaults(_ body: (UserDefaults) -> Void) {
   #expect(carbonModifiers([.control, .capsLock]) == UInt32(controlKey))
 }
 
-@Test func labelOrdersModifiersAndNamesKeys() {
+// TIS は複数スレッドから同時に呼ぶと異常終了するため、TIS を呼ぶテストはメインアクターで直列に走らせる。
+@Test @MainActor func labelOrdersModifiersAndNamesKeys() {
   #expect(HotKeyAction.launcher.defaultCombo.label == "⌘Space")
   #expect(HotKeyAction.leftHalf.defaultCombo.label == "⇧⌘←")
   #expect(HotKeyAction.previousDisplay.defaultCombo.label == "⌃⌘←")
@@ -78,4 +79,7 @@ private func withDefaults(_ body: (UserDefaults) -> Void) {
   #expect(HotKeyAction.topRight.defaultCombo.label == "⇧⌘1")
   #expect(KeyCombo(keyCode: UInt32(kVK_F12), modifiers: UInt32(controlKey)).label == "⌃F12")
   #expect(KeyCombo(keyCode: 999, modifiers: UInt32(cmdKey)).label == "⌘Key999")
+  #expect(
+    KeyCombo(keyCode: 30, modifiers: UInt32(cmdKey)).label
+      == "⌘" + layoutCharacter(keyCode: 30)!.uppercased())
 }
