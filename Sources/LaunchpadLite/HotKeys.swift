@@ -105,7 +105,7 @@ private let keyNames: [Int: String] = {
 
 extension KeyCombo {
   /// 修飾キーを ⌃⌥⇧⌘ の順に並べ、キー名を続けた表示(例 ⇧⌘←)。
-  var label: String {
+  @MainActor var label: String {
     let symbols: [(Int, String)] = [
       (controlKey, "⌃"), (optionKey, "⌥"), (shiftKey, "⇧"), (cmdKey, "⌘"),
     ]

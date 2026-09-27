@@ -71,7 +71,7 @@ private func withDefaults(_ body: (UserDefaults) -> Void) {
 }
 
 // TIS は複数スレッドから同時に呼ぶと異常終了するため、TIS を呼ぶテストはメインアクターで直列に走らせる。
-@Test @MainActor func labelOrdersModifiersAndNamesKeys() {
+@Test @MainActor func labelOrdersModifiersAndNamesKeys() throws {
   #expect(HotKeyAction.launcher.defaultCombo.label == "⌘Space")
   #expect(HotKeyAction.leftHalf.defaultCombo.label == "⇧⌘←")
   #expect(HotKeyAction.previousDisplay.defaultCombo.label == "⌃⌘←")
@@ -81,5 +81,8 @@ private func withDefaults(_ body: (UserDefaults) -> Void) {
   #expect(KeyCombo(keyCode: 999, modifiers: UInt32(cmdKey)).label == "⌘Key999")
   #expect(
     KeyCombo(keyCode: 30, modifiers: UInt32(cmdKey)).label
-      == "⌘" + layoutCharacter(keyCode: 30)!.uppercased())
+      == "⌘" + (try #require(layoutCharacter(keyCode: 30))).uppercased())
+  // テンキーの Enter は制御文字(U+0003)に変換されるため、番号で表示する。
+  #expect(
+    KeyCombo(keyCode: UInt32(kVK_ANSI_KeypadEnter), modifiers: UInt32(cmdKey)).label == "⌘Key76")
 }
