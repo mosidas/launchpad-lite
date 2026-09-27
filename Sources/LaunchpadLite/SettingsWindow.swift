@@ -60,8 +60,17 @@ private struct SettingsView: View {
     }
     .padding(20)
     .fixedSize()
-    // 閉じてもホットキーが外れたままにならないよう、記録中なら終える。
+    // 閉じても、他のアプリへ切り替えても、ホットキーが外れたままにならないよう記録を終える。
+    // 閉じるボタンでは .onDisappear が呼ばれないので、ウィンドウの通知も受ける。
     .onDisappear { stopRecording() }
+    .onReceive(
+      NotificationCenter.default.publisher(
+        for: NSWindow.willCloseNotification, object: settingsWindow)
+    ) { _ in stopRecording() }
+    .onReceive(
+      NotificationCenter.default.publisher(
+        for: NSWindow.didResignKeyNotification, object: settingsWindow)
+    ) { _ in stopRecording() }
   }
 
   /// 記録中は全ホットキーを外す。外さないと、記録しようとしたキーで動作が先に起きる。
