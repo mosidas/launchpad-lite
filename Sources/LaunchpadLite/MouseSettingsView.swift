@@ -36,7 +36,7 @@ struct MouseSettingsView: View {
           Toggle("ポインタの加速", isOn: $settings.pointerAcceleration)
           LabeledContent("ポインタの速度") {
             HStack {
-              Slider(value: $settings.pointerSpeed, in: 0.1...3)
+              Slider(value: $settings.pointerSpeed, in: 0.1...3).frame(width: 180)
               valueLabel(settings.pointerSpeed.formatted(.number.precision(.fractionLength(1))))
             }
           }
@@ -46,7 +46,7 @@ struct MouseSettingsView: View {
           Toggle("横のスクロールを反転する", isOn: $settings.reverseHorizontal)
           LabeledContent("スクロールの行数") {
             HStack {
-              Slider(value: scrollLines, in: 1...20, step: 1)
+              Slider(value: scrollLines, in: 1...20, step: 1).frame(width: 180)
               valueLabel("\(settings.scrollLines)")
             }
           }
