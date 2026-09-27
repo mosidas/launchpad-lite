@@ -64,11 +64,11 @@ struct MouseSettingsView: View {
             }
           }
           Button(recording == .button ? "マウスのボタンを押す…" : "ボタンを記録") {
-            startRecording(.button)
+            if recording == .button { stopRecording() } else { startRecording(.button) }
           }
         }
       }
-      Text("キーの入力中は修飾キーの無いキーも受け付ける。Escape で取り消す。")
+      Text("ボタンはこのウィンドウの上で押す。キーの入力中は修飾キーの無いキーも受け付ける。Escape で取り消す。")
         .font(.caption).foregroundStyle(.secondary)
       Button("既定に戻す") {
         stopRecording()
@@ -108,8 +108,12 @@ struct MouseSettingsView: View {
       }
     } set: { choice in
       switch choice {
-      case .none: setAction(nil, for: trigger)
-      case .system(let action): setAction(.system(action), for: trigger)
+      case .none:
+        if recording == .key(trigger) { stopRecording() }
+        setAction(nil, for: trigger)
+      case .system(let action):
+        if recording == .key(trigger) { stopRecording() }
+        setAction(.system(action), for: trigger)
       case .shortcut:
         if case .shortcut = settings.action(for: trigger) { return }
         startRecording(.key(trigger))
