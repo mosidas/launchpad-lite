@@ -46,9 +46,10 @@ func usesNavigationKeys(bundleID: String?) -> Bool {
 @MainActor private var tapPausedForRecording = false
 
 /// マウスのホイールとボタンのイベントを書き換える tap をメインの run loop に載せる。既に載せていれば何もしない。
+/// F キーの割り当てのため、キーボードのイベントもこの tap で扱う。
 @MainActor func startMouseEventTap() {
   guard mouseEventTap == nil else { return }
-  let types: [CGEventType] = [.scrollWheel, .otherMouseDown, .otherMouseUp]
+  let types: [CGEventType] = [.scrollWheel, .otherMouseDown, .otherMouseUp, .keyDown, .keyUp]
   let mask = types.reduce(CGEventMask(0)) { $0 | 1 << $1.rawValue }
   guard
     let tap = CGEvent.tapCreate(
@@ -98,6 +99,19 @@ func usesNavigationKeys(bundleID: String?) -> Bool {
     return false
   }
   guard event.getIntegerValueField(.eventSourceUserData) != syntheticEventMark else { return false }
+
+  if type == .keyDown || type == .keyUp {
+    guard
+      let action = functionKeyAction(
+        currentKeyboardSettings, keyCode: Int(event.getIntegerValueField(.keyboardEventKeycode)),
+        flags: event.flags)
+    else { return false }
+    // ponytail: キーリピートでは実行しない。音量などで押しっぱなしの連続実行が要るなら autorepeat でも実行する形に引き上げる。
+    if type == .keyDown && event.getIntegerValueField(.keyboardEventAutorepeat) == 0 {
+      Task { @MainActor in perform(action) }
+    }
+    return true
+  }
   let settings = currentMouseSettings
 
   if type == .otherMouseDown || type == .otherMouseUp {

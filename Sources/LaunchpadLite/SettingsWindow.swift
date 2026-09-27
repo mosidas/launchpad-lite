@@ -22,6 +22,7 @@ func showSettings() {
     rootView: TabView {
       SettingsView().tabItem { Text("ホットキー") }
       MouseSettingsView().tabItem { Text("マウス") }
+      KeyboardSettingsView().tabItem { Text("キーボード") }
     })
   window.center()
   NSApp.activate()
