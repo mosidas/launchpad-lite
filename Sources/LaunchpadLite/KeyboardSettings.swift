@@ -15,7 +15,7 @@ struct KeyboardSettings: Equatable {
   var remaps: [KeyRemap] = []
 }
 
-/// 保存済みの設定を返す。保存値が無いか壊れていれば空を返し、1〜12 以外の番号は捨てる。
+/// 保存済みの設定を返す。保存値が無いか壊れていれば空を返し、1〜12 以外の番号と、置き換えの元のキーの重複(後の行)は捨てる。
 func loadKeyboardSettings(from defaults: UserDefaults = .standard) -> KeyboardSettings {
   let keys = defaults.data(forKey: "keyboard.functionKeys").flatMap {
     try? JSONDecoder().decode([Int: MouseAction].self, from: $0)
@@ -23,8 +23,10 @@ func loadKeyboardSettings(from defaults: UserDefaults = .standard) -> KeyboardSe
   let remaps = defaults.data(forKey: "keyboard.remaps").flatMap {
     try? JSONDecoder().decode([KeyRemap].self, from: $0)
   }
+  var seen = Set<UInt32>()
   return KeyboardSettings(
-    functionKeys: (keys ?? [:]).filter { (1...12).contains($0.key) }, remaps: remaps ?? [])
+    functionKeys: (keys ?? [:]).filter { (1...12).contains($0.key) },
+    remaps: (remaps ?? []).filter { seen.insert($0.from).inserted })
 }
 
 /// 設定を保存する。nil なら保存値を消し、既定値に戻す。

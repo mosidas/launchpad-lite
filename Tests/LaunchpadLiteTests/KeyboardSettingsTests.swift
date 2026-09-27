@@ -77,6 +77,16 @@ private func withDefaults(_ body: (UserDefaults) -> Void) {
   }
 }
 
+@Test func loadingRemapsKeepsFirstOfDuplicateFrom() {
+  withDefaults { defaults in
+    let first = KeyRemap(from: UInt32(kVK_CapsLock), to: UInt32(kVK_Control))
+    let other = KeyRemap(from: UInt32(kVK_ANSI_A), to: UInt32(kVK_ANSI_B))
+    let duplicate = KeyRemap(from: UInt32(kVK_CapsLock), to: UInt32(kVK_Escape))
+    defaults.set(try! JSONEncoder().encode([first, other, duplicate]), forKey: "keyboard.remaps")
+    #expect(loadKeyboardSettings(from: defaults).remaps == [first, other])
+  }
+}
+
 @Test func invalidRemapsFallBack() {
   withDefaults { defaults in
     defaults.set(Data("broken".utf8), forKey: "keyboard.remaps")

@@ -183,6 +183,10 @@ struct KeyboardSettingsView: View {
         settings.remaps.append(KeyRemap(from: from, to: keyCode))
       }
       stopRecording()
+      // 元のキーとして押した Caps Lock でロックが点いたままになるので消す。
+      if from == UInt32(kVK_CapsLock) && NSEvent.modifierFlags.contains(.capsLock) {
+        setCapsLockState(false)
+      }
     case nil: return
     }
   }
