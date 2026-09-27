@@ -45,7 +45,13 @@ struct KeyboardSettingsView: View {
                 Button(
                   recording == .remapTo(remap.from)
                     ? "キーを入力…" : KeyCombo(keyCode: remap.to, modifiers: 0).label
-                ) { startRecording(.remapTo(remap.from)) }
+                ) {
+                  if recording == .remapTo(remap.from) {
+                    stopRecording()
+                  } else {
+                    startRecording(.remapTo(remap.from))
+                  }
+                }
                 Button("削除") {
                   if recording == .remapTo(remap.from) { stopRecording() }
                   settings.remaps.removeAll { $0.from == remap.from }
@@ -53,11 +59,13 @@ struct KeyboardSettingsView: View {
               }
             }
           }
-          Button(addButtonTitle) { startRecording(.remapFrom) }
+          Button(addButtonTitle) {
+            if isAddingRemap { stopRecording() } else { startRecording(.remapFrom) }
+          }
         }
       }
       Text(
-        "F キーの割り当ては修飾キーの無い押下だけに効く。キーの入力中は修飾キーの無いキーも受け付け、置き換えでは Caps Lock や修飾キーも押せる。Escape で取り消す。キーの置き換えは LaunchpadLite を終了すると解除する。"
+        "F キーの割り当ては修飾キーの無い押下だけに効く。キーの入力中は修飾キーの無いキーも受け付け、F キーは Escape で取り消す。置き換えでは Caps Lock・修飾キー・Escape も押せ、記録中のボタンをもう一度押すと取り消す。キーの置き換えは LaunchpadLite を終了すると解除する。"
       )
       .font(.caption).foregroundStyle(.secondary)
       Button("既定に戻す") {
@@ -109,13 +117,22 @@ struct KeyboardSettingsView: View {
     }
   }
 
+  /// 「キーを追加」から始めた記録の途中か。
+  private var isAddingRemap: Bool {
+    switch recording {
+    case .remapFrom: true
+    case .remapTo(let from): !settings.remaps.contains { $0.from == from }
+    default: false
+    }
+  }
+
   /// 「キーを追加」の表示。記録中は次に押すキーを示す。
   private var addButtonTitle: String {
     switch recording {
-    case .remapFrom: return "元のキーを入力…"
-    case .remapTo(let from) where !settings.remaps.contains { $0.from == from }:
-      return "\(KeyCombo(keyCode: from, modifiers: 0).label) → 置き換え先を入力…"
-    default: return "キーを追加"
+    case .remapFrom: "元のキーを入力…"
+    case .remapTo(let from) where isAddingRemap:
+      "\(KeyCombo(keyCode: from, modifiers: 0).label) → 置き換え先を入力…"
+    default: "キーを追加"
     }
   }
 
@@ -136,7 +153,10 @@ struct KeyboardSettingsView: View {
   private func record(_ event: NSEvent) {
     let keyCode = UInt32(event.keyCode)
     let modifiers = carbonModifiers(event.modifierFlags)
-    if event.type == .keyDown && event.keyCode == kVK_Escape && modifiers == 0 {
+    // 置き換えでは Escape も置き換えの対象になるので、Escape で取り消すのは F キーの記録だけにする。
+    if case .functionKey = recording, event.type == .keyDown, event.keyCode == kVK_Escape,
+      modifiers == 0
+    {
       stopRecording()
       return
     }
