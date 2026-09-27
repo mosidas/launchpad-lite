@@ -108,3 +108,21 @@ private let defaultBindings = [
   #expect(SystemAction.allCases.count == 12)
   #expect(Set(SystemAction.allCases.map(\.title)).count == 12)
 }
+
+@Test func pointerPropertiesSwitchAccelerationThenSetSpeed() {
+  var settings = MouseSettings(
+    pointerAcceleration: true, pointerSpeed: 1.1, reverseVertical: false,
+    reverseHorizontal: true, scrollLines: 4, bindings: [])
+  #expect(
+    pointerProperties(settings).map { "\($0.key)=\($0.value)" } == [
+      "HIDUseLinearScalingMouseAcceleration=0", "HIDMouseAcceleration=72090",
+    ])
+  settings.pointerAcceleration = false
+  for (speed, fixed) in [(0.0, 0), (3.0, 196608)] {
+    settings.pointerSpeed = speed
+    #expect(
+      pointerProperties(settings).map { "\($0.key)=\($0.value)" } == [
+        "HIDUseLinearScalingMouseAcceleration=1", "HIDMouseAcceleration=\(fixed)",
+      ])
+  }
+}

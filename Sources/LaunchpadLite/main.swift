@@ -31,4 +31,11 @@ performHotKey = { action in
 }
 registerAllHotKeys()
 
+applyPointerSettings(currentMouseSettings)
+// ponytail: マウスの再接続やスリープ復帰で OS がシステム設定の値を入れ直すので、5 秒ごとに書き直す。
+// 反映まで最大 5 秒かかる。気になれば IOHIDManager の接続通知で書き直す形に引き上げる。
+Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in
+  MainActor.assumeIsolated { applyPointerSettings(currentMouseSettings) }
+}
+
 app.run()
