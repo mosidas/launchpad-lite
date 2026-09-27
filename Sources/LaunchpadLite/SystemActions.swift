@@ -51,31 +51,6 @@ func postMouseButton(_ number: Int) {
   }
 }
 
-/// 現在の ASCII 配列で、修飾キーなしに `character` を出す keycode を返す。JIS などでは記号の位置が ANSI と異なる。
-func keyCode(for character: Character) -> UInt32? {
-  guard let source = TISCopyCurrentASCIICapableKeyboardLayoutInputSource()?.takeRetainedValue(),
-    let pointer = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData)
-  else { return nil }
-  let data = Unmanaged<CFData>.fromOpaque(pointer).takeUnretainedValue() as Data
-  return data.withUnsafeBytes { raw -> UInt32? in
-    guard let layout = raw.baseAddress?.assumingMemoryBound(to: UCKeyboardLayout.self) else {
-      return nil
-    }
-    for code: UInt16 in 0..<128 {
-      var deadKeyState: UInt32 = 0
-      var length = 0
-      var chars = [UniChar](repeating: 0, count: 4)
-      let status = UCKeyTranslate(
-        layout, code, UInt16(kUCKeyActionDown), 0, UInt32(LMGetKbdType()),
-        OptionBits(kUCKeyTranslateNoDeadKeysMask), &deadKeyState, chars.count, &length, &chars)
-      if status == noErr, String(utf16CodeUnits: chars, count: length) == String(character) {
-        return UInt32(code)
-      }
-    }
-    return nil
-  }
-}
-
 /// マウスの割り当てを実行する。
 @MainActor func perform(_ action: MouseAction) {
   let missionControl = "/System/Applications/Mission Control.app/Contents/MacOS/Mission Control"

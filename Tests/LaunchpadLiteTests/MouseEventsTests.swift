@@ -71,11 +71,18 @@ import Testing
   #expect(!usesNavigationKeys(bundleID: nil))
 }
 
-@Test func keyCodeFollowsCurrentLayout() {
+// TIS は複数スレッドから同時に呼ぶと異常終了するため、TIS を呼ぶテストはメインアクターで直列に走らせる。
+@Test @MainActor func keyCodeFollowsCurrentLayout() {
   #expect(keyCode(for: "a") == UInt32(kVK_ANSI_A))
   let left = keyCode(for: "[")
   let right = keyCode(for: "]")
   #expect(left != nil)
   #expect(right != nil)
   #expect(left != right)
+}
+
+@Test @MainActor func layoutCharacterRoundTripsWithKeyCode() {
+  #expect(layoutCharacter(keyCode: UInt16(kVK_ANSI_A)) == "a")
+  let left = keyCode(for: "[").flatMap { UInt16(exactly: $0) }
+  #expect(left.flatMap { layoutCharacter(keyCode: $0) } == "[")
 }
