@@ -19,12 +19,13 @@ func openScreenshotToolbar() {
 
 func sleepNow() { run("/usr/bin/pmset", ["sleepnow"]) }
 
-/// キーの組み合わせを押して離す。
+/// キーの組み合わせを押して離す。自分の tap が素通しするよう印を付ける。
 func postKey(_ combo: KeyCombo) {
   for down in [true, false] {
     let event = CGEvent(
       keyboardEventSource: nil, virtualKey: CGKeyCode(combo.keyCode), keyDown: down)
     event?.flags = keyEventFlags(combo)
+    event?.setIntegerValueField(.eventSourceUserData, value: syntheticEventMark)
     event?.post(tap: .cghidEventTap)
   }
 }

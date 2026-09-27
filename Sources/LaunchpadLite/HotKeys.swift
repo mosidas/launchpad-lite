@@ -89,17 +89,19 @@ func carbonModifiers(_ flags: NSEvent.ModifierFlags) -> UInt32 {
 }
 
 // ponytail: 文字にならないキーだけ固定表。文字は現在の配列から引く
+/// F1〜F12 のキーコード。添字 + 1 がキーの番号になる。
+let functionKeyCodes = [
+  kVK_F1, kVK_F2, kVK_F3, kVK_F4, kVK_F5, kVK_F6, kVK_F7, kVK_F8, kVK_F9, kVK_F10, kVK_F11,
+  kVK_F12,
+]
+
 private let keyNames: [Int: String] = {
   var names: [Int: String] = [
     kVK_LeftArrow: "←", kVK_RightArrow: "→", kVK_UpArrow: "↑", kVK_DownArrow: "↓",
     kVK_Return: "Return", kVK_Space: "Space", kVK_Tab: "Tab", kVK_Delete: "Delete",
     kVK_Escape: "Escape",
   ]
-  let functionKeys = [
-    kVK_F1, kVK_F2, kVK_F3, kVK_F4, kVK_F5, kVK_F6, kVK_F7, kVK_F8, kVK_F9, kVK_F10, kVK_F11,
-    kVK_F12,
-  ]
-  for (i, code) in functionKeys.enumerated() { names[code] = "F\(i + 1)" }
+  for (i, code) in functionKeyCodes.enumerated() { names[code] = "F\(i + 1)" }
   return names
 }()
 

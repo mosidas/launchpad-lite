@@ -70,6 +70,12 @@ private func withDefaults(_ body: (UserDefaults) -> Void) {
   #expect(carbonModifiers([.control, .capsLock]) == UInt32(controlKey))
 }
 
+@Test func functionKeyCodesCoverF1ThroughF12() {
+  #expect(functionKeyCodes.count == 12)
+  #expect(functionKeyCodes.first == kVK_F1)
+  #expect(functionKeyCodes.last == kVK_F12)
+}
+
 // TIS は複数スレッドから同時に呼ぶと異常終了するため、TIS を呼ぶテストはメインアクターで直列に走らせる。
 @Test @MainActor func labelOrdersModifiersAndNamesKeys() throws {
   #expect(HotKeyAction.launcher.defaultCombo.label == "⌘Space")

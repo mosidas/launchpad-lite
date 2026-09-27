@@ -2,13 +2,31 @@ import AppKit
 import Carbon.HIToolbox
 import SwiftUI
 
+/// 割り当ての Picker で選ぶ動作。ショートカットのキーは Picker の外で記録する。
+enum ActionChoice: Hashable {
+  case none, shortcut
+  case system(SystemAction)
+}
+
+/// 動作を選ぶ Picker。なし・SystemAction の一覧・キーボードショートカットを並べる。
+struct ActionPicker: View {
+  @Binding var selection: ActionChoice
+
+  var body: some View {
+    Picker("", selection: $selection) {
+      Text("なし").tag(ActionChoice.none)
+      ForEach(SystemAction.allCases, id: \.self) { action in
+        Text(action.title).tag(ActionChoice.system(action))
+      }
+      Text("キーボードショートカット").tag(ActionChoice.shortcut)
+    }
+    .labelsHidden()
+    .fixedSize()
+  }
+}
+
 /// マウスの設定。変えるとその場で保存し、適用する。
 struct MouseSettingsView: View {
-  private enum Choice: Hashable {
-    case none, shortcut
-    case system(SystemAction)
-  }
-
   private enum Recording: Equatable {
     case button
     case key(MouseTrigger)
@@ -55,15 +73,7 @@ struct MouseSettingsView: View {
           ForEach(triggers, id: \.self) { trigger in
             LabeledContent(trigger.title) {
               HStack {
-                Picker("", selection: choice(for: trigger)) {
-                  Text("なし").tag(Choice.none)
-                  ForEach(SystemAction.allCases, id: \.self) { action in
-                    Text(action.title).tag(Choice.system(action))
-                  }
-                  Text("キーボードショートカット").tag(Choice.shortcut)
-                }
-                .labelsHidden()
-                .fixedSize()
+                ActionPicker(selection: choice(for: trigger))
                 if recording == .key(trigger) {
                   Button("キーを入力…") { startRecording(.key(trigger)) }
                 } else if case .shortcut(let combo) = settings.action(for: trigger) {
@@ -121,7 +131,7 @@ struct MouseSettingsView: View {
   }
 
   /// 「なし」は割り当てを外し、ショートカットはキーの記録を始める。
-  private func choice(for trigger: MouseTrigger) -> Binding<Choice> {
+  private func choice(for trigger: MouseTrigger) -> Binding<ActionChoice> {
     Binding {
       if recording == .key(trigger) { return .shortcut }
       switch settings.action(for: trigger) {
