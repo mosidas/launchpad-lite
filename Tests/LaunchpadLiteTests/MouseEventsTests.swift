@@ -70,3 +70,12 @@ import Testing
   #expect(!usesNavigationKeys(bundleID: "com.microsoft.VSCode"))
   #expect(!usesNavigationKeys(bundleID: nil))
 }
+
+@Test func keyCodeFollowsCurrentLayout() {
+  #expect(keyCode(for: "a") == UInt32(kVK_ANSI_A))
+  let left = keyCode(for: "[")
+  let right = keyCode(for: "]")
+  #expect(left != nil)
+  #expect(right != nil)
+  #expect(left != right)
+}
