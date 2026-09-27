@@ -1,6 +1,8 @@
 import Foundation
 import IOKit.hidsystem
 
+// HID のサービスに設定を書く。マウスにはポインタの加速と速度、キーボードにはキーの置き換え(UserKeyMapping)を書く。
+
 /// マウスのサービスに書く HID のプロパティ。加速の方式を切り替えてから速度(IOFixed)を書く。
 func pointerProperties(_ settings: MouseSettings) -> [(key: String, value: Int)] {
   [
@@ -40,4 +42,30 @@ func pointerProperties(_ settings: MouseSettings) -> [(key: String, value: Int)]
       }
     }
   }
+}
+
+@MainActor private var keyRemapsPaused = false
+@MainActor private var loggedKeyMappingFailure = false
+
+/// キーボードのサービスすべてに、キーの置き換えを書く。停止中や置き換えが空なら空の配列を書いて解除する。
+@MainActor func applyKeyRemaps(_ settings: KeyboardSettings) {
+  let mapping = keyRemapsPaused ? [] : userKeyMapping(settings.remaps)
+  let services = IOHIDEventSystemClientCopyServices(hidClient) as? [IOHIDServiceClient] ?? []
+  for service in services
+  where IOHIDServiceClientConformsTo(
+    service, UInt32(kHIDPage_GenericDesktop), UInt32(kHIDUsage_GD_Keyboard)) != 0
+  {
+    let written = IOHIDServiceClientSetProperty(
+      service, "UserKeyMapping" as CFString, mapping as CFArray)
+    if !written && !loggedKeyMappingFailure {
+      loggedKeyMappingFailure = true
+      NSLog("LaunchpadLite: キーボードの UserKeyMapping を書けなかった")
+    }
+  }
+}
+
+/// キーの置き換えを止める・再開する。キーの記録中と終了時に止める。
+@MainActor func setKeyRemapsEnabled(_ enabled: Bool) {
+  keyRemapsPaused = !enabled
+  applyKeyRemaps(currentKeyboardSettings)
 }

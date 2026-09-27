@@ -101,6 +101,7 @@ func usesNavigationKeys(bundleID: String?) -> Bool {
   guard event.getIntegerValueField(.eventSourceUserData) != syntheticEventMark else { return false }
 
   if type == .keyDown || type == .keyUp {
+    // ponytail: 押している途中で修飾キーの状態が変わると keyDown と keyUp の片方だけを捨てる。問題になったら捨てた keyDown のキーコードを覚え、keyUp を対にして捨てる形に引き上げる。
     guard
       let action = functionKeyAction(
         currentKeyboardSettings, keyCode: Int(event.getIntegerValueField(.keyboardEventKeycode)),

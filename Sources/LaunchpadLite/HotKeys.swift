@@ -88,20 +88,26 @@ func carbonModifiers(_ flags: NSEvent.ModifierFlags) -> UInt32 {
   return pairs.reduce(0) { $0 | (flags.contains($1.0) ? UInt32($1.1) : 0) }
 }
 
-// ponytail: 文字にならないキーだけ固定表。文字は現在の配列から引く
 /// F1〜F12 のキーコード。添字 + 1 がキーの番号になる。
 let functionKeyCodes = [
   kVK_F1, kVK_F2, kVK_F3, kVK_F4, kVK_F5, kVK_F6, kVK_F7, kVK_F8, kVK_F9, kVK_F10, kVK_F11,
   kVK_F12,
 ]
 
+// ponytail: 文字にならないキーだけ固定表。文字は現在の配列から引く
 private let keyNames: [Int: String] = {
   var names: [Int: String] = [
     kVK_LeftArrow: "←", kVK_RightArrow: "→", kVK_UpArrow: "↑", kVK_DownArrow: "↓",
     kVK_Return: "Return", kVK_Space: "Space", kVK_Tab: "Tab", kVK_Delete: "Delete",
-    kVK_Escape: "Escape",
+    kVK_Escape: "Escape", kVK_ForwardDelete: "⌦", kVK_CapsLock: "Caps Lock",
+    kVK_Shift: "左⇧", kVK_RightShift: "右⇧", kVK_Control: "左⌃", kVK_RightControl: "右⌃",
+    kVK_Option: "左⌥", kVK_RightOption: "右⌥", kVK_Command: "左⌘", kVK_RightCommand: "右⌘",
+    kVK_JIS_Eisu: "英数", kVK_JIS_Kana: "かな", kVK_Home: "Home", kVK_End: "End",
+    kVK_PageUp: "Page Up", kVK_PageDown: "Page Down", kVK_Help: "Help",
   ]
   for (i, code) in functionKeyCodes.enumerated() { names[code] = "F\(i + 1)" }
+  let f13to20 = [kVK_F13, kVK_F14, kVK_F15, kVK_F16, kVK_F17, kVK_F18, kVK_F19, kVK_F20]
+  for (i, code) in f13to20.enumerated() { names[code] = "F\(i + 13)" }
   return names
 }()
 
