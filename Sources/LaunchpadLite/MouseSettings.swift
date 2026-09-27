@@ -82,7 +82,7 @@ func loadMouseSettings(from defaults: UserDefaults = .standard) -> MouseSettings
   return MouseSettings(
     pointerAcceleration: value(
       "mouse.pointerAcceleration", !value("com.apple.mouse.linear", false)),
-    pointerSpeed: min(max(speed.isNaN ? systemSpeed : speed, 0), 3),
+    pointerSpeed: min(max(speed.isNaN ? systemSpeed : speed, 0.1), 3),
     reverseVertical: value("mouse.reverseVertical", false),
     reverseHorizontal: value("mouse.reverseHorizontal", true),
     scrollLines: min(max(value("mouse.scrollLines", 4), 1), 20),

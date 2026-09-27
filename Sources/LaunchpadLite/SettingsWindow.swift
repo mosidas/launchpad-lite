@@ -2,7 +2,7 @@ import AppKit
 import Carbon.HIToolbox
 import SwiftUI
 
-@MainActor private var settingsWindow: NSWindow?
+@MainActor var settingsWindow: NSWindow?
 
 /// 設定ウィンドウを開く。ウィンドウは 1 つだけ作って使い回す。
 @MainActor
@@ -18,7 +18,11 @@ func showSettings() {
       return window
     }()
   // 開くたびにビューを作り直し、保存値を読み直す。
-  window.contentView = NSHostingView(rootView: SettingsView())
+  window.contentView = NSHostingView(
+    rootView: TabView {
+      SettingsView().tabItem { Text("ホットキー") }
+      MouseSettingsView().tabItem { Text("マウス") }
+    })
   window.center()
   NSApp.activate()
   window.makeKeyAndOrderFront(nil)

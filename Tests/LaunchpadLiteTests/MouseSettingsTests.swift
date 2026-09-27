@@ -77,7 +77,7 @@ private let defaultBindings = [
     defaults.set(99, forKey: "mouse.scrollLines")
     defaults.set("x", forKey: "mouse.bindings")
     settings = loadMouseSettings(from: defaults)
-    #expect(settings.pointerSpeed == 0)
+    #expect(settings.pointerSpeed == 0.1)
     #expect(settings.scrollLines == 20)
     #expect(settings.bindings == defaultBindings)
     defaults.set(2.0, forKey: "com.apple.mouse.scaling")
