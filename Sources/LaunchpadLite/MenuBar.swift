@@ -10,8 +10,7 @@ final class MenuBar: NSObject, NSMenuDelegate {
 
   override init() {
     super.init()
-    statusItem.button?.image = NSImage(
-      systemSymbolName: "square.grid.3x3", accessibilityDescription: "LaunchpadLite")
+    statusItem.button?.image = rocketTemplateImage()
 
     let menu = NSMenu()
     menu.delegate = self
