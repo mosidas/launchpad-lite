@@ -2,7 +2,7 @@ import AppKit
 import Carbon.HIToolbox
 
 /// ホットキーのキーの組み合わせ。keyCode は kVK_*、modifiers は cmdKey などの和。
-struct KeyCombo: Equatable {
+struct KeyCombo: Equatable, Codable {
   var keyCode: UInt32
   var modifiers: UInt32
 }
