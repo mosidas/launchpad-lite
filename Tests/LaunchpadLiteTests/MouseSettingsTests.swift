@@ -80,6 +80,9 @@ private let defaultBindings = [
     #expect(settings.pointerSpeed == 0)
     #expect(settings.scrollLines == 20)
     #expect(settings.bindings == defaultBindings)
+    defaults.set(2.0, forKey: "com.apple.mouse.scaling")
+    defaults.set(Double.nan, forKey: "mouse.pointerSpeed")
+    #expect(loadMouseSettings(from: defaults).pointerSpeed == 2.0)
   }
 }
 

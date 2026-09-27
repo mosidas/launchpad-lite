@@ -75,11 +75,14 @@ func loadMouseSettings(from defaults: UserDefaults = .standard) -> MouseSettings
   let bindings = defaults.data(forKey: "mouse.bindings").flatMap {
     try? JSONDecoder().decode([MouseBinding].self, from: $0)
   }
+  // NaN は型違いと同じに扱う(min・max は NaN を素通しする)。
+  let scaling = value("com.apple.mouse.scaling", 1.0)
+  let systemSpeed = scaling.isNaN ? 1.0 : scaling
+  let speed = value("mouse.pointerSpeed", systemSpeed)
   return MouseSettings(
     pointerAcceleration: value(
       "mouse.pointerAcceleration", !value("com.apple.mouse.linear", false)),
-    pointerSpeed: min(
-      max(value("mouse.pointerSpeed", value("com.apple.mouse.scaling", 1.0)), 0), 3),
+    pointerSpeed: min(max(speed.isNaN ? systemSpeed : speed, 0), 3),
     reverseVertical: value("mouse.reverseVertical", false),
     reverseHorizontal: value("mouse.reverseHorizontal", true),
     scrollLines: min(max(value("mouse.scrollLines", 4), 1), 20),
