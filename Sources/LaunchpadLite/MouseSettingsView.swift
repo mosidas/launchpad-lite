@@ -34,13 +34,22 @@ struct MouseSettingsView: View {
       Form {
         Section("ポインタ") {
           Toggle("ポインタの加速", isOn: $settings.pointerAcceleration)
-          Slider(value: $settings.pointerSpeed, in: 0.1...3) { Text("ポインタの速度") }
+          LabeledContent("ポインタの速度") {
+            HStack {
+              Slider(value: $settings.pointerSpeed, in: 0.1...3)
+              valueLabel(settings.pointerSpeed.formatted(.number.precision(.fractionLength(1))))
+            }
+          }
         }
         Section("ホイール") {
           Toggle("縦のスクロールを反転する", isOn: $settings.reverseVertical)
           Toggle("横のスクロールを反転する", isOn: $settings.reverseHorizontal)
-          Stepper(
-            "1 目盛りで \(settings.scrollLines) 行", value: $settings.scrollLines, in: 1...20)
+          LabeledContent("スクロールの行数") {
+            HStack {
+              Slider(value: scrollLines, in: 1...20, step: 1)
+              valueLabel("\(settings.scrollLines)")
+            }
+          }
         }
         Section("ボタンの割り当て") {
           ForEach(triggers, id: \.self) { trigger in
@@ -95,6 +104,20 @@ struct MouseSettingsView: View {
       NotificationCenter.default.publisher(
         for: NSWindow.didResignKeyNotification, object: settingsWindow)
     ) { _ in stopRecording() }
+  }
+
+  /// Slider の横に置く値。桁数で Slider の幅が変わらないよう、幅を固定する。
+  private func valueLabel(_ text: String) -> some View {
+    Text(text).monospacedDigit().frame(width: 32, alignment: .trailing)
+  }
+
+  /// Slider は Double を扱うので、Int の行数を仲介する。
+  private var scrollLines: Binding<Double> {
+    Binding {
+      Double(settings.scrollLines)
+    } set: {
+      settings.scrollLines = Int($0.rounded())
+    }
   }
 
   /// 「なし」は割り当てを外し、ショートカットはキーの記録を始める。

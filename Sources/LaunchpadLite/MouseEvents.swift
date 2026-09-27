@@ -41,9 +41,11 @@ func usesNavigationKeys(bundleID: String?) -> Bool {
 }
 
 @MainActor private var mouseEventTap: CFMachPort?
+@MainActor private var loggedTapFailure = false
 
-/// マウスのホイールとボタンのイベントを書き換える tap をメインの run loop に載せる。
+/// マウスのホイールとボタンのイベントを書き換える tap をメインの run loop に載せる。既に載せていれば何もしない。
 @MainActor func startMouseEventTap() {
+  guard mouseEventTap == nil else { return }
   let types: [CGEventType] = [.scrollWheel, .otherMouseDown, .otherMouseUp]
   let mask = types.reduce(CGEventMask(0)) { $0 | 1 << $1.rawValue }
   guard
@@ -56,9 +58,13 @@ func usesNavigationKeys(bundleID: String?) -> Bool {
         return drop ? nil : Unmanaged.passUnretained(event)
       }, userInfo: nil)
   else {
-    NSLog("LaunchpadLite: マウスのイベント tap を作れなかった(アクセシビリティ未許可)")
+    if !loggedTapFailure {
+      NSLog("LaunchpadLite: マウスのイベント tap を作れなかった(アクセシビリティ未許可)")
+      loggedTapFailure = true
+    }
     return
   }
+  NSLog("LaunchpadLite: マウスのイベント tap を作った")
   mouseEventTap = tap
   CFRunLoopAddSource(
     CFRunLoopGetMain(), CFMachPortCreateRunLoopSource(nil, tap, 0), .commonModes)
