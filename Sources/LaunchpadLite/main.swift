@@ -7,6 +7,8 @@ app.setActivationPolicy(.accessory)
 // キーは kAXTrustedCheckOptionPrompt の値。定数は C のグローバル変数で Swift 6 では参照できないため文字列で書く。
 _ = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
 
+// トップレベルで保持する。解放されるとメニューバーのアイコンが消える。
+let menuBar = MenuBar()
 let launcher = LauncherPanel()
 performHotKey = { action in
   switch action {

@@ -4,7 +4,7 @@ Raycast の代わりに使う、最小限の macOS ランチャー。アプリ�
 
 ## 使い方
 
-[Releases](https://github.com/mosidas/launchpad-lite/releases) から `LaunchpadLite-<バージョン>.zip` をダウンロードして展開し、`LaunchpadLite.app` を `/Applications` へ移して開く。Apple Silicon 向けのビルドである。Dock とメニューバーには何も出ない。
+[Releases](https://github.com/mosidas/launchpad-lite/releases) から `LaunchpadLite-<バージョン>.zip` をダウンロードして展開し、`LaunchpadLite.app` を `/Applications` へ移して開く。Apple Silicon 向けのビルドである。Dock には出ず、メニューバーにアイコンが出る。
 
 配布物はアドホック署名だけで公証していないため、初回の起動は Gatekeeper に止められる。次のどちらかで起動を許可する。
 
@@ -13,7 +13,7 @@ Raycast の代わりに使う、最小限の macOS ランチャー。アプリ�
 
 ソースからビルドするときは、`scripts/bundle.sh` を実行し、できた `dist/LaunchpadLite.app` を `/Applications` へコピーして開く。
 
-ログイン時に自動で起動するには、システム設定 > 一般 > ログイン項目に `LaunchpadLite.app` を手で追加する。
+ログイン時に自動で起動するには、メニューバーのアイコンから「ログイン時に起動」を選択する。もう一度選択すると解除する。この切り替えは `.app` から起動したときだけ働き、`swift run` で動かしたときはエラーになる。以前にシステム設定 > 一般 > ログイン項目へ `LaunchpadLite.app` を手で追加していた場合は、二重に起動しないようその項目を削除する。
 
 ## ホットキー
 
