@@ -68,7 +68,8 @@ func usesNavigationKeys(bundleID: String?) -> Bool {
   }
   NSLog("LaunchpadLite: マウスのイベント tap を作った")
   mouseEventTap = tap
-  tapPausedForRecording = false
+  // 記録中に許可されて作られた tap は、記録が終わるまで止めておく。
+  if tapPausedForRecording { CGEvent.tapEnable(tap: tap, enable: false) }
   CFRunLoopAddSource(
     CFRunLoopGetMain(), CFMachPortCreateRunLoopSource(nil, tap, 0), .commonModes)
 }
