@@ -75,4 +75,5 @@ LinearMouse など、マウスの設定を変える同種のアプリとは併�
 ## ビルドとテスト
 
 - ビルド: `scripts/bundle.sh`(release ビルド、`.app` の組み立て、アドホック署名を行う)
+- アイコン: `scripts/bundle.sh` が `Resources/AppIcon.png` からビルドのたびに `AppIcon.icns` を作る。
 - テスト: `scripts/test.sh`(Command Line Tools だけの環境では `swift test` が swift-testing を見つけられないため、検索パスを付けて呼ぶ)
