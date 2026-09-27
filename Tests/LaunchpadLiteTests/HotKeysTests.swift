@@ -1,3 +1,4 @@
+import AppKit
 import Carbon.HIToolbox
 import Foundation
 import Testing
@@ -34,6 +35,8 @@ private func withDefaults(_ body: (UserDefaults) -> Void) {
     #expect(loadKeyCombo(.launcher, from: defaults) == HotKeyAction.launcher.defaultCombo)
     defaults.set(["a", "b"], forKey: "hotKey.launcher")
     #expect(loadKeyCombo(.launcher, from: defaults) == HotKeyAction.launcher.defaultCombo)
+    defaults.set([-1, 0], forKey: "hotKey.launcher")
+    #expect(loadKeyCombo(.launcher, from: defaults) == HotKeyAction.launcher.defaultCombo)
     defaults.set("x", forKey: "hotKey.launcher")
     #expect(loadKeyCombo(.launcher, from: defaults) == HotKeyAction.launcher.defaultCombo)
   }
@@ -55,4 +58,24 @@ private func withDefaults(_ body: (UserDefaults) -> Void) {
     #expect(loadKeyCombo(.maximize, from: defaults) == HotKeyAction.maximize.defaultCombo)
     #expect(defaults.object(forKey: "hotKey.maximize") == nil)
   }
+}
+
+@Test func carbonModifiersMapsEachFlag() {
+  #expect(carbonModifiers(.command) == UInt32(cmdKey))
+  #expect(carbonModifiers(.shift) == UInt32(shiftKey))
+  #expect(carbonModifiers(.option) == UInt32(optionKey))
+  #expect(carbonModifiers(.control) == UInt32(controlKey))
+  #expect(carbonModifiers([.command, .shift]) == UInt32(cmdKey | shiftKey))
+  #expect(carbonModifiers([.capsLock, .function, .numericPad]) == 0)
+  #expect(carbonModifiers([.control, .capsLock]) == UInt32(controlKey))
+}
+
+@Test func labelOrdersModifiersAndNamesKeys() {
+  #expect(HotKeyAction.launcher.defaultCombo.label == "⌘Space")
+  #expect(HotKeyAction.leftHalf.defaultCombo.label == "⇧⌘←")
+  #expect(HotKeyAction.previousDisplay.defaultCombo.label == "⌃⌘←")
+  #expect(HotKeyAction.sleep.defaultCombo.label == "⌥⌘S")
+  #expect(HotKeyAction.topRight.defaultCombo.label == "⇧⌘1")
+  #expect(KeyCombo(keyCode: UInt32(kVK_F12), modifiers: UInt32(controlKey)).label == "⌃F12")
+  #expect(KeyCombo(keyCode: 999, modifiers: UInt32(cmdKey)).label == "⌘Key999")
 }

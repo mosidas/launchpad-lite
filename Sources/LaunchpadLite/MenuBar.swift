@@ -1,7 +1,7 @@
 import AppKit
 import ServiceManagement
 
-/// メニューバーのアイコンとメニュー。ログイン時起動の切り替えと終了を置く。
+/// メニューバーのアイコンとメニュー。ログイン時起動の切り替え・設定・終了を置く。
 @MainActor
 final class MenuBar: NSObject, NSMenuDelegate {
   private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
@@ -17,6 +17,10 @@ final class MenuBar: NSObject, NSMenuDelegate {
     menu.delegate = self
     loginItem.target = self
     menu.addItem(loginItem)
+    let settingsItem = NSMenuItem(
+      title: "設定…", action: #selector(openSettings(_:)), keyEquivalent: ",")
+    settingsItem.target = self
+    menu.addItem(settingsItem)
     menu.addItem(.separator())
     let quitItem = NSMenuItem(
       title: "LaunchpadLite を終了", action: #selector(NSApplication.terminate(_:)),
@@ -29,6 +33,10 @@ final class MenuBar: NSObject, NSMenuDelegate {
   // 状態はアプリ側に持たず、開くたびに OS から読む。システム設定側で外されても表示がずれない。
   func menuNeedsUpdate(_ menu: NSMenu) {
     loginItem.state = SMAppService.mainApp.status == .enabled ? .on : .off
+  }
+
+  @objc private func openSettings(_ sender: NSMenuItem) {
+    showSettings()
   }
 
   @objc private func toggleLoginItem(_ sender: NSMenuItem) {
