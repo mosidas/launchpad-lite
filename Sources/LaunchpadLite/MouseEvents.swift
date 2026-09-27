@@ -42,6 +42,8 @@ func usesNavigationKeys(bundleID: String?) -> Bool {
 
 @MainActor private var mouseEventTap: CFMachPort?
 @MainActor private var loggedTapFailure = false
+/// 記録中に自分で tap を止めているか。止めている間は作り直さない。
+@MainActor private var tapPausedForRecording = false
 
 /// マウスのホイールとボタンのイベントを書き換える tap をメインの run loop に載せる。既に載せていれば何もしない。
 @MainActor func startMouseEventTap() {
@@ -66,13 +68,27 @@ func usesNavigationKeys(bundleID: String?) -> Bool {
   }
   NSLog("LaunchpadLite: マウスのイベント tap を作った")
   mouseEventTap = tap
+  // 記録中に許可されて作られた tap は、記録が終わるまで止めておく。
+  if tapPausedForRecording { CGEvent.tapEnable(tap: tap, enable: false) }
   CFRunLoopAddSource(
     CFRunLoopGetMain(), CFMachPortCreateRunLoopSource(nil, tap, 0), .commonModes)
 }
 
 /// tap を止める・動かす。
 @MainActor func setMouseEventTapEnabled(_ enabled: Bool) {
+  tapPausedForRecording = !enabled
   if let tap = mouseEventTap { CGEvent.tapEnable(tap: tap, enable: enabled) }
+}
+
+/// 許可の取り消しで OS に無効にされた tap を捨てて作り直す。tap が無ければ作る。
+/// 取り消しでは .tapDisabledByUserInput が届かないので、呼び出し側が定期的に呼ぶ。
+@MainActor func restartMouseEventTapIfDisabled() {
+  if let tap = mouseEventTap, !tapPausedForRecording, !CGEvent.tapIsEnabled(tap: tap) {
+    NSLog("LaunchpadLite: 無効になったマウスのイベント tap を作り直す")
+    CFMachPortInvalidate(tap)  // run loop source もこれで run loop から外れる
+    mouseEventTap = nil
+  }
+  startMouseEventTap()
 }
 
 /// 割り当てを実行するか、イベントをその場で書き換える。イベントを捨てるなら true を返す。
