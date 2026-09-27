@@ -38,4 +38,6 @@ Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in
   MainActor.assumeIsolated { applyPointerSettings(currentMouseSettings) }
 }
 
+startMouseEventTap()
+
 app.run()
