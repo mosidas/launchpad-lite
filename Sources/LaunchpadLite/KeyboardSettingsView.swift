@@ -2,12 +2,6 @@ import AppKit
 import Carbon.HIToolbox
 import SwiftUI
 
-/// 修飾キーごとの、左右を区別するデバイスのフラグ(NX_DEVICE*KEYMASK)。flagsChanged が押下か離しかを見分ける。
-private let modifierMasks: [Int: UInt] = [
-  kVK_Control: 0x1, kVK_RightControl: 0x2000, kVK_Shift: 0x2, kVK_RightShift: 0x4,
-  kVK_Option: 0x20, kVK_RightOption: 0x40, kVK_Command: 0x8, kVK_RightCommand: 0x10,
-]
-
 /// キーボードの設定。変えるとその場で保存し、適用する。
 struct KeyboardSettingsView: View {
   /// キーを記録中の対象。F キーのショートカット、置き換えの元のキー、置き換え先(元のキーを持つ)。

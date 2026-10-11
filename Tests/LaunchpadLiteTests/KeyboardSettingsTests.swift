@@ -119,3 +119,84 @@ private func withDefaults(_ body: (UserDefaults) -> Void) {
   #expect(userKeyMapping([unknown, capsToControl]) == expected)
   #expect(userKeyMapping([KeyRemap(from: UInt32(kVK_ANSI_A), to: 0x90)]).isEmpty)
 }
+
+@Test func decodesRemapsSavedWithoutConditions() {
+  withDefaults { defaults in
+    defaults.set(Data(#"[{"from":57,"to":59}]"#.utf8), forKey: "keyboard.remaps")
+    #expect(
+      loadKeyboardSettings(from: defaults).remaps == [
+        KeyRemap(from: UInt32(kVK_CapsLock), to: UInt32(kVK_Control))
+      ])
+  }
+}
+
+@Test func saveThenLoadRoundTripsConditionalRemap() {
+  withDefaults { defaults in
+    let remap = KeyRemap(
+      from: UInt32(kVK_Space), to: UInt32(kVK_Space), toModifiers: UInt32(shiftKey),
+      onlyJapaneseInput: true)
+    saveKeyboardSettings(KeyboardSettings(functionKeys: [:], remaps: [remap]), to: defaults)
+    #expect(loadKeyboardSettings(from: defaults).remaps == [remap])
+  }
+}
+
+@Test func loadingDropsInvalidConditionalRemaps() {
+  withDefaults { defaults in
+    let valid = KeyRemap(
+      from: UInt32(kVK_Space), to: UInt32(kVK_Space), toModifiers: UInt32(shiftKey),
+      onlyJapaneseInput: true)
+    let plain = KeyRemap(from: UInt32(kVK_CapsLock), to: UInt32(kVK_Control))
+    let invalid = [
+      KeyRemap(from: UInt32(kVK_ANSI_A), to: UInt32(kVK_ANSI_B), toModifiers: UInt32(alphaLock)),
+      KeyRemap(from: UInt32(kVK_ANSI_C), to: UInt32(kVK_ANSI_D), toModifiers: 0x1_0000),
+      KeyRemap(from: UInt32(kVK_CapsLock), to: UInt32(kVK_Escape), onlyJapaneseInput: true),
+      KeyRemap(from: UInt32(kVK_ANSI_E), to: UInt32(kVK_Shift), toModifiers: UInt32(cmdKey)),
+    ]
+    defaults.set(
+      try! JSONEncoder().encode([invalid[0], valid, invalid[1], invalid[2], invalid[3], plain]),
+      forKey: "keyboard.remaps")
+    #expect(loadKeyboardSettings(from: defaults).remaps == [valid, plain])
+  }
+}
+
+@Test func userKeyMappingSkipsEventTapRemaps() {
+  let plain = KeyRemap(from: UInt32(kVK_CapsLock), to: UInt32(kVK_Control))
+  let conditional = KeyRemap(
+    from: UInt32(kVK_Space), to: UInt32(kVK_Space), onlyJapaneseInput: true)
+  let modified = KeyRemap(
+    from: UInt32(kVK_ANSI_A), to: UInt32(kVK_ANSI_B), toModifiers: UInt32(cmdKey))
+  #expect(userKeyMapping([conditional, modified, plain]) == userKeyMapping([plain]))
+  #expect(userKeyMapping([plain]).count == 1)
+}
+
+@Test func eventTapRemapAppliesOnlyInJapaneseInput() {
+  let space = UInt32(kVK_Space)
+  let japanese = KeyRemap(
+    from: space, to: space, toModifiers: UInt32(shiftKey), onlyJapaneseInput: true)
+  let modified = KeyRemap(
+    from: UInt32(kVK_ANSI_A), to: UInt32(kVK_ANSI_B), toModifiers: UInt32(cmdKey))
+  let plain = KeyRemap(from: UInt32(kVK_ANSI_C), to: UInt32(kVK_ANSI_D))
+  let remaps = [plain, japanese, modified]
+  var asked = 0
+
+  #expect(eventTapRemap(remaps, keyCode: space, flags: []) { true } == japanese)
+  #expect(eventTapRemap(remaps, keyCode: space, flags: []) { false } == nil)
+  for flag: CGEventFlags in [.maskShift, .maskCommand] {
+    #expect(
+      eventTapRemap(remaps, keyCode: space, flags: flag) {
+        asked += 1
+        return true
+      } == nil)
+  }
+  #expect(
+    eventTapRemap(remaps, keyCode: UInt32(kVK_ANSI_A), flags: []) {
+      asked += 1
+      return false
+    } == modified)
+  #expect(
+    eventTapRemap(remaps, keyCode: UInt32(kVK_ANSI_C), flags: []) {
+      asked += 1
+      return true
+    } == nil)
+  #expect(asked == 0)
+}

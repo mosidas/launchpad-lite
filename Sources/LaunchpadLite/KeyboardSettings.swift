@@ -6,6 +6,31 @@ import Foundation
 struct KeyRemap: Equatable, Codable {
   var from: UInt32
   var to: UInt32
+  /// 置き換え先に付ける修飾キー(Carbon の cmdKey などの和)。
+  var toModifiers: UInt32 = 0
+  /// 入力ソースが日本語のときだけ置き換える。
+  var onlyJapaneseInput = false
+}
+
+extension KeyRemap {
+  /// 新しい項目を持たない古い保存値も読めるよう、無い項目は既定値にする。
+  init(from decoder: Decoder) throws {
+    let container = try decoder.container(keyedBy: CodingKeys.self)
+    from = try container.decode(UInt32.self, forKey: .from)
+    to = try container.decode(UInt32.self, forKey: .to)
+    toModifiers = try container.decodeIfPresent(UInt32.self, forKey: .toModifiers) ?? 0
+    onlyJapaneseInput =
+      try container.decodeIfPresent(Bool.self, forKey: .onlyJapaneseInput) ?? false
+  }
+
+  /// UserKeyMapping で表せず、イベント tap で処理する行か。
+  var usesEventTap: Bool { toModifiers != 0 || onlyJapaneseInput }
+
+  /// 適用できる行か。修飾キーは ⌘⇧⌥⌃ に限り、イベント tap で処理する行は keyDown を出すキー同士に限る。
+  var isValid: Bool {
+    toModifiers & ~UInt32(cmdKey | shiftKey | optionKey | controlKey) == 0
+      && (!usesEventTap || (sendsKeyDown(keyCode: from) && sendsKeyDown(keyCode: to)))
+  }
 }
 
 struct KeyboardSettings: Equatable {
@@ -15,7 +40,8 @@ struct KeyboardSettings: Equatable {
   var remaps: [KeyRemap] = []
 }
 
-/// 保存済みの設定を返す。保存値が無いか壊れていれば空を返し、1〜12 以外の番号と、置き換えの元のキーの重複(後の行)は捨てる。
+/// 保存済みの設定を返す。保存値が無いか壊れていれば空を返し、1〜12 以外の番号と、適用できない置き換えの行と、
+/// 置き換えの元のキーの重複(後の行)は捨てる。保存値は `defaults write` で外から書けるため、ここで検証する。
 func loadKeyboardSettings(from defaults: UserDefaults = .standard) -> KeyboardSettings {
   let keys = defaults.data(forKey: "keyboard.functionKeys").flatMap {
     try? JSONDecoder().decode([Int: MouseAction].self, from: $0)
@@ -24,9 +50,13 @@ func loadKeyboardSettings(from defaults: UserDefaults = .standard) -> KeyboardSe
     try? JSONDecoder().decode([KeyRemap].self, from: $0)
   }
   var seen = Set<UInt32>()
+  let kept = (remaps ?? []).filter { $0.isValid && seen.insert($0.from).inserted }
+  if let remaps, remaps.count > kept.count {
+    NSLog("LaunchpadLite: 保存済みのキーの置き換えから使えない行を捨てた(\(remaps.count - kept.count) 行)")
+  }
   return KeyboardSettings(
     functionKeys: (keys ?? [:]).filter { (1...12).contains($0.key) },
-    remaps: (remaps ?? []).filter { seen.insert($0.from).inserted })
+    remaps: kept)
 }
 
 /// 設定を保存する。nil なら保存値を消し、既定値に戻す。
@@ -42,6 +72,28 @@ func saveKeyboardSettings(_ settings: KeyboardSettings?, to defaults: UserDefaul
 
 /// 実行時の現在の設定。
 @MainActor var currentKeyboardSettings = loadKeyboardSettings()
+
+/// 修飾キーごとの、左右を区別するデバイスのフラグ(NX_DEVICE*KEYMASK)。flagsChanged が押下か離しかを見分ける。
+let modifierMasks: [Int: UInt] = [
+  kVK_Control: 0x1, kVK_RightControl: 0x2000, kVK_Shift: 0x2, kVK_RightShift: 0x4,
+  kVK_Option: 0x20, kVK_RightOption: 0x40, kVK_Command: 0x8, kVK_RightCommand: 0x10,
+]
+
+/// keyDown を出すキーか。修飾キーと Caps Lock は flagsChanged しか出さない。
+func sendsKeyDown(keyCode: UInt32) -> Bool {
+  keyCode != kVK_CapsLock && modifierMasks[Int(keyCode)] == nil
+}
+
+/// イベント tap で置き換える行のうち、押されたキーに当たるもの。⌘⌃⌥⇧ のどれかが付いていれば nil を返す。
+/// japaneseInput は日本語入力に限る行に当たったときだけ呼ぶ。
+func eventTapRemap(
+  _ remaps: [KeyRemap], keyCode: UInt32, flags: CGEventFlags, japaneseInput: () -> Bool
+) -> KeyRemap? {
+  guard flags.isDisjoint(with: [.maskCommand, .maskControl, .maskAlternate, .maskShift]),
+    let remap = remaps.first(where: { $0.usesEventTap && $0.from == keyCode })
+  else { return nil }
+  return !remap.onlyJapaneseInput || japaneseInput() ? remap : nil
+}
 
 /// F キーのキーコードを F の番号(1〜12)にする。F キーでなければ nil。
 func functionKeyNumber(keyCode: Int) -> Int? {
@@ -100,9 +152,9 @@ func hidUsage(keyCode: UInt32) -> UInt64? {
   hidUsages[Int(keyCode)]
 }
 
-/// IOHIDEventSystem の UserKeyMapping に書く値(hidutil と同じ形)。表に無いキーを含む組は捨てる。
+/// IOHIDEventSystem の UserKeyMapping に書く値(hidutil と同じ形)。イベント tap で処理する行と、表に無いキーを含む組は除く。
 func userKeyMapping(_ remaps: [KeyRemap]) -> [[String: UInt64]] {
-  remaps.compactMap { remap in
+  remaps.filter { !$0.usesEventTap }.compactMap { remap in
     guard let src = hidUsage(keyCode: remap.from), let dst = hidUsage(keyCode: remap.to) else {
       return nil
     }
