@@ -44,9 +44,11 @@ func usesNavigationKeys(bundleID: String?) -> Bool {
 @MainActor private var loggedTapFailure = false
 /// 記録中に自分で tap を止めているか。止めている間は作り直さない。
 @MainActor private var tapPausedForRecording = false
+/// keyDown で決めたキーの置き換え(元のキーコードごと)。keyUp まで覚える。
+@MainActor private var tapRemappedKeys: [Int64: KeyRemap] = [:]
 
 /// マウスのホイールとボタンのイベントを書き換える tap をメインの run loop に載せる。既に載せていれば何もしない。
-/// F キーの割り当てのため、キーボードのイベントもこの tap で扱う。
+/// F キーの割り当てと、UserKeyMapping で表せないキーの置き換え(条件付き・修飾キー付き)のため、キーボードのイベントもこの tap で扱う。
 @MainActor func startMouseEventTap() {
   guard mouseEventTap == nil else { return }
   let types: [CGEventType] = [.scrollWheel, .otherMouseDown, .otherMouseUp, .keyDown, .keyUp]
@@ -101,6 +103,25 @@ func usesNavigationKeys(bundleID: String?) -> Bool {
   guard event.getIntegerValueField(.eventSourceUserData) != syntheticEventMark else { return false }
 
   if type == .keyDown || type == .keyUp {
+    // 押している途中で入力ソースや修飾キーが変わっても keyUp を keyDown と同じキーにするため、keyDown で決めた置き換えを使う。
+    // キーコードと入力ソースはキー入力の記録になるため、ここではログに出さない。
+    let keyCode = event.getIntegerValueField(.keyboardEventKeycode)
+    let remap: KeyRemap?
+    if type == .keyUp {
+      remap = tapRemappedKeys.removeValue(forKey: keyCode)
+    } else if event.getIntegerValueField(.keyboardEventAutorepeat) != 0 {
+      remap = tapRemappedKeys[keyCode]
+    } else {
+      remap = eventTapRemap(
+        currentKeyboardSettings.remaps, keyCode: UInt32(keyCode), flags: event.flags,
+        japaneseInput: isJapaneseInputSelected)
+      tapRemappedKeys[keyCode] = remap
+    }
+    if let remap {
+      event.setIntegerValueField(.keyboardEventKeycode, value: Int64(remap.to))
+      event.flags.formUnion(
+        keyEventFlags(KeyCombo(keyCode: remap.to, modifiers: remap.toModifiers)))
+    }
     // ponytail: 押している途中で修飾キーの状態が変わると keyDown と keyUp の片方だけを捨てる。問題になったら捨てた keyDown のキーコードを覚え、keyUp を対にして捨てる形に引き上げる。
     guard
       let action = functionKeyAction(

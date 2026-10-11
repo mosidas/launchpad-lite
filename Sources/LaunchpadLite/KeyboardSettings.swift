@@ -26,10 +26,13 @@ extension KeyRemap {
   /// UserKeyMapping で表せず、イベント tap で処理する行か。
   var usesEventTap: Bool { toModifiers != 0 || onlyJapaneseInput }
 
-  /// 適用できる行か。修飾キーは ⌘⇧⌥⌃ に限り、イベント tap で処理する行は keyDown を出すキー同士に限る。
+  /// 適用できる行か。修飾キーは ⌘⇧⌥⌃ に限り、イベント tap で処理する行は keyDown を出す表にあるキー同士に限る。
+  /// 表で範囲を限るのは、tap がキーコードを CGKeyCode(UInt16)に変換するため。
   var isValid: Bool {
     toModifiers & ~UInt32(cmdKey | shiftKey | optionKey | controlKey) == 0
-      && (!usesEventTap || (sendsKeyDown(keyCode: from) && sendsKeyDown(keyCode: to)))
+      && (!usesEventTap
+        || (sendsKeyDown(keyCode: from) && sendsKeyDown(keyCode: to)
+          && hidUsage(keyCode: from) != nil && hidUsage(keyCode: to) != nil))
   }
 }
 

@@ -30,6 +30,23 @@ import Carbon.HIToolbox
   currentLayoutTranslator()?(keyCode)
 }
 
+@MainActor private var loggedInputSourceFailure = false
+
+/// 現在の入力ソースの第一言語が日本語か。取れなければ、置き換えずに元のキーを届けるため false を返す。
+@MainActor func isJapaneseInputSelected() -> Bool {
+  guard let source = TISCopyCurrentKeyboardInputSource()?.takeRetainedValue(),
+    let pointer = TISGetInputSourceProperty(source, kTISPropertyInputSourceLanguages),
+    let languages = Unmanaged<CFArray>.fromOpaque(pointer).takeUnretainedValue() as? [String]
+  else {
+    if !loggedInputSourceFailure {
+      NSLog("LaunchpadLite: 現在の入力ソースの言語を取れなかった")
+      loggedInputSourceFailure = true
+    }
+    return false
+  }
+  return languages.first == "ja"
+}
+
 /// 現在の ASCII 配列で、修飾キーなしに `character` を出す keycode を返す。JIS などでは記号の位置が ANSI と異なる。
 @MainActor func keyCode(for character: Character) -> UInt32? {
   guard let translate = currentLayoutTranslator() else { return nil }

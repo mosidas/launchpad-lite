@@ -151,9 +151,11 @@ private func withDefaults(_ body: (UserDefaults) -> Void) {
       KeyRemap(from: UInt32(kVK_ANSI_C), to: UInt32(kVK_ANSI_D), toModifiers: 0x1_0000),
       KeyRemap(from: UInt32(kVK_CapsLock), to: UInt32(kVK_Escape), onlyJapaneseInput: true),
       KeyRemap(from: UInt32(kVK_ANSI_E), to: UInt32(kVK_Shift), toModifiers: UInt32(cmdKey)),
+      KeyRemap(from: UInt32(kVK_ANSI_F), to: 70000, toModifiers: UInt32(shiftKey)),
     ]
     defaults.set(
-      try! JSONEncoder().encode([invalid[0], valid, invalid[1], invalid[2], invalid[3], plain]),
+      try! JSONEncoder().encode(
+        [invalid[0], valid, invalid[1], invalid[2], invalid[3], invalid[4], plain]),
       forKey: "keyboard.remaps")
     #expect(loadKeyboardSettings(from: defaults).remaps == [valid, plain])
   }
