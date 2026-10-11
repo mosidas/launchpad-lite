@@ -24,7 +24,7 @@ jobs:
         run: scripts/test.sh
 
       - name: Build application
-        run: scripts/bundle.sh
+        run: scripts/bundle.sh "$GITHUB_REF_NAME"
 
       - name: Create zip
         run: ditto -c -k --keepParent dist/LaunchpadLite.app "dist/LaunchpadLite-${{ github.ref_name }}.zip"
