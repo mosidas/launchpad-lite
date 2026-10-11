@@ -27,7 +27,7 @@ extension KeyRemap {
   var usesEventTap: Bool { toModifiers != 0 || onlyJapaneseInput }
 
   /// 適用できる行か。修飾キーは ⌘⇧⌥⌃ に限り、イベント tap で処理する行は keyDown を出す表にあるキー同士に限る。
-  /// 表で範囲を限るのは、tap がキーコードを CGKeyCode(UInt16)に変換するため。
+  /// 表で範囲を限るのは、表に無いキーコードは CGEvent のキーコード(16 ビット)に収まらないか、実在しないキーになるため。
   var isValid: Bool {
     toModifiers & ~UInt32(cmdKey | shiftKey | optionKey | controlKey) == 0
       && (!usesEventTap

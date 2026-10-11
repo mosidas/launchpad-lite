@@ -113,7 +113,8 @@ func usesNavigationKeys(bundleID: String?) -> Bool {
       remap = tapRemappedKeys[keyCode]
     } else {
       remap = eventTapRemap(
-        currentKeyboardSettings.remaps, keyCode: UInt32(keyCode), flags: event.flags,
+        currentKeyboardSettings.remaps, keyCode: UInt32(truncatingIfNeeded: keyCode),
+        flags: event.flags,
         japaneseInput: isJapaneseInputSelected)
       tapRemappedKeys[keyCode] = remap
     }
