@@ -94,6 +94,6 @@ F1〜F12 の各行で動作を選択すると、そのキーを押したとき�
 
 ## ビルドとテスト
 
-- ビルド: `scripts/bundle.sh`(release ビルド、`.app` の組み立て、アドホック署名を行う)
+- ビルド: `scripts/bundle.sh`(release ビルド、`.app` の組み立て、アドホック署名を行う)。`scripts/bundle.sh v1.2.3` のようにバージョンを渡すと、Info.plist の `CFBundleShortVersionString` と `CFBundleVersion` に書く。省略時は 0.0.0 になる。リリースのワークフローはタグ名を渡す。
 - アイコン: `scripts/bundle.sh` が `Resources/AppIcon.png` からビルドのたびに `AppIcon.icns` を作る。
 - テスト: `scripts/test.sh`(Command Line Tools だけの環境では `swift test` が swift-testing を見つけられないため、検索パスを付けて呼ぶ)
