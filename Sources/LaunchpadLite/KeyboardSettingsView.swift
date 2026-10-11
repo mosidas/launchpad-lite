@@ -190,6 +190,8 @@ struct KeyboardSettingsView: View {
       // 修飾キーは、押したまま別のキーを押せば修飾キー付きの置き換え先、そのまま離せば修飾キー単独の置き換え先にする。
       let (to, toModifiers): (UInt32, UInt32)
       if event.type == .keyDown {
+        // 元のキーを押したまま修飾キーを押すとリピートに修飾キーが付くので、リピートは捨てる。pending も残す。
+        guard !event.isARepeat else { return }
         pendingModifier = nil
         (to, toModifiers) = (keyCode, modifiers)
       } else if keyCode == UInt32(kVK_CapsLock) || (isRelease && keyCode == pendingModifier) {
@@ -198,7 +200,7 @@ struct KeyboardSettingsView: View {
         if !isRelease { pendingModifier = keyCode }
         return
       }
-      // 元のキーのキーリピートや離し(Caps Lock)も届くので、元と同じキーは無視して記録を続ける。
+      // リピートは上で捨てる。ここでは元と同じキーの修飾キー無しの押下(Caps Lock の切り替えを含む)を無視する。
       guard hidUsage(keyCode: to) != nil, to != from || toModifiers != 0 else { return }
       let index = settings.remaps.firstIndex { $0.from == from }
       var remap = KeyRemap(
