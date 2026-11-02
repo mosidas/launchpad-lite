@@ -69,13 +69,16 @@ private let notes = URL(fileURLWithPath: "/System/Applications/Notes.app")
   #expect(history.frecency(of: app, now: now) == 3, "時計を戻した後の未来の記録は今の起動と同じに数える")
 }
 
-@Test func recordLaunchOnMaxCountDoesNotOverflow() {
-  let date = Date(timeIntervalSince1970: 1_700_000_000)
-  var history = LaunchHistory(records: [
-    safari.path: LaunchRecord(count: .max, lastLaunched: .distantPast)
-  ])
-  history.recordLaunch(of: safari, at: date)
-  let record = history.records[safari.path]
-  #expect(record?.count ?? 0 > 0)
-  #expect(record?.lastLaunched == date)
+@Test func overLimitCountLoadsAtLimitAndKeepsCounting() {
+  withDefaults { defaults in
+    let json = """
+      {"/Applications/Safari.app": {"count": \(Int.max), "lastLaunched": 0}}
+      """
+    defaults.set(Data(json.utf8), forKey: "launcher.history")
+    var history = loadLaunchHistory(from: defaults)
+    #expect(history.records[safari.path]?.count == 1_000_000, "書き換えられた回数は上限に寄せて読む")
+    let date = Date(timeIntervalSince1970: 1_700_000_000)
+    history.recordLaunch(of: safari, at: date)
+    #expect(history.records[safari.path] == LaunchRecord(count: 1_000_001, lastLaunched: date))
+  }
 }

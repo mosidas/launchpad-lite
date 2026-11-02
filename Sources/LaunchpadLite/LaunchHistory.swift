@@ -18,18 +18,18 @@ struct LaunchHistory: Equatable {
     return Double(record.count) * pow(0.5, days / 7)
   }
 
-  /// 保存値は書き換えられうるので、回数が上限を超えていれば上限に寄せてから数える(Int.max で溢れないように)。
-  private static let maxCount = 1_000_000
-
   mutating func recordLaunch(of url: URL, at date: Date) {
-    let count = min(records[url.path]?.count ?? 0, Self.maxCount)
+    let count = records[url.path]?.count ?? 0
     records[url.path] = LaunchRecord(count: count + 1, lastLaunched: date)
   }
 }
 
 private let historyKey = "launcher.history"
 
-/// 保存済みの履歴を返す。保存値が無ければ空、読めなければログに残して空にする。回数が 1 未満の項目は捨てる。
+/// 保存値は書き換えられうるので、読むときに回数をこの上限に寄せる(Int.max から数えて溢れないように)。
+private let maxLoadedCount = 1_000_000
+
+/// 保存済みの履歴を返す。保存値が無ければ空、読めなければログに残して空にする。回数が 1 未満の項目は捨て、上限を超える回数は上限に寄せる。
 func loadLaunchHistory(from defaults: UserDefaults = .standard) -> LaunchHistory {
   guard let stored = defaults.object(forKey: historyKey) else { return LaunchHistory() }
   guard let data = stored as? Data,
@@ -38,7 +38,11 @@ func loadLaunchHistory(from defaults: UserDefaults = .standard) -> LaunchHistory
     NSLog("LaunchpadLite: 起動履歴を読めないので空にした")
     return LaunchHistory()
   }
-  return LaunchHistory(records: records.filter { $0.value.count >= 1 })
+  return LaunchHistory(
+    records:
+      records.filter { $0.value.count >= 1 }.mapValues {
+        LaunchRecord(count: min($0.count, maxLoadedCount), lastLaunched: $0.lastLaunched)
+      })
 }
 
 func saveLaunchHistory(_ history: LaunchHistory, to defaults: UserDefaults = .standard) {

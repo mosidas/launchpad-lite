@@ -123,7 +123,7 @@ private struct LauncherView: View {
         }
       ForEach(Array(results.enumerated()), id: \.element.url) { index, app in
         HStack(spacing: 8) {
-          // IconServices がシステム全体でキャッシュするので自前では持たない(実測で 2 回目以降は 231 件で 16 ms)。
+          // IconServices がシステム全体でキャッシュするので自前では持たない。
           Image(nsImage: NSWorkspace.shared.icon(forFile: app.url.path))
             .resizable()
             .frame(width: 24, height: 24)
