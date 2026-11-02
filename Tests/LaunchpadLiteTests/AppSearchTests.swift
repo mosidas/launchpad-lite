@@ -89,7 +89,8 @@ private let japaneseApps = entries([
 }
 
 @Test func typoRanksBelowExactMatch() {
-  #expect(rankedNames("safrai", ["Safari", "Safe Rail"]) == ["Safe Rail", "Safari"])
+  // 「Unsafe Train」の正しい一致は、「Safari」の打ち間違いの一致よりスコアが低く、名前も長い
+  #expect(rankedNames("safrai", ["Safari", "Unsafe Train"]) == ["Unsafe Train", "Safari"])
 }
 
 @Test func twoEditsDoNotMatch() {

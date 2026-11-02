@@ -71,7 +71,8 @@ func match(query: String, app: AppEntry) -> Match? {
     [app.name, app.fileName].compactMap { fuzzyScore(query: q, candidate: $0) }.max()
   }
   if let score = best(query) { return .exact(score) }
-  // shortcut: 誤字は 3 文字以上で 1 文字だけ。2 文字の誤字を拾う要望が出たら置換の表を検討する
+  // shortcut: 誤字は 3 文字以上で 1 文字だけ。2 文字の誤字を拾う要望が出たら置換の表を検討する。
+  // 3 文字の入力では誤字の候補が広く出る(実機の 125 件で「abc」が 28 件)。体感で邪魔なら下限を 4 文字に上げる
   guard query.count >= 3 else { return nil }
   return query.indices.compactMap { i in
     var variant = query
