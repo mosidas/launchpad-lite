@@ -13,13 +13,17 @@ struct LaunchHistory: Equatable {
   func frecency(of app: AppEntry, now: Date) -> Double {
     guard let record = records[app.url.path] else { return 0 }
     // shortcut: 半減期 7 日は根拠のない仮の値。並びが利用者の感覚と合わないという声が出たら起動の記録から決め直す
-    let days = now.timeIntervalSince(record.lastLaunched) / 86_400
+    // 時計を戻した後は lastLaunched が now より未来になる。未来の記録は今の起動と同じに数える。
+    let days = max(0, now.timeIntervalSince(record.lastLaunched) / 86_400)
     return Double(record.count) * pow(0.5, days / 7)
   }
 
+  /// 保存値は書き換えられうるので、回数が上限を超えていれば上限に寄せてから数える(Int.max で溢れないように)。
+  private static let maxCount = 1_000_000
+
   mutating func recordLaunch(of url: URL, at date: Date) {
-    records[url.path, default: LaunchRecord(count: 0, lastLaunched: date)].count += 1
-    records[url.path]?.lastLaunched = date
+    let count = min(records[url.path]?.count ?? 0, Self.maxCount)
+    records[url.path] = LaunchRecord(count: count + 1, lastLaunched: date)
   }
 }
 

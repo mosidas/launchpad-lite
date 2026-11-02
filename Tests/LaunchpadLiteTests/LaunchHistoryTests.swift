@@ -59,3 +59,23 @@ private let notes = URL(fileURLWithPath: "/System/Applications/Notes.app")
       ])
   }
 }
+
+@Test func futureLaunchDoesNotRaiseFrecencyAboveCount() {
+  let now = Date(timeIntervalSince1970: 1_700_000_000)
+  let history = LaunchHistory(records: [
+    safari.path: LaunchRecord(count: 3, lastLaunched: now.addingTimeInterval(7 * 86_400))
+  ])
+  let app = AppEntry(name: "Safari", fileName: "Safari", url: safari)
+  #expect(history.frecency(of: app, now: now) == 3, "時計を戻した後の未来の記録は今の起動と同じに数える")
+}
+
+@Test func recordLaunchOnMaxCountDoesNotOverflow() {
+  let date = Date(timeIntervalSince1970: 1_700_000_000)
+  var history = LaunchHistory(records: [
+    safari.path: LaunchRecord(count: .max, lastLaunched: .distantPast)
+  ])
+  history.recordLaunch(of: safari, at: date)
+  let record = history.records[safari.path]
+  #expect(record?.count ?? 0 > 0)
+  #expect(record?.lastLaunched == date)
+}
