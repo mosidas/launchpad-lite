@@ -3,13 +3,21 @@ import Testing
 
 @testable import LaunchpadLite
 
-private func entries(_ names: [String]) -> [AppEntry] {
-  names.map { AppEntry(name: $0, url: URL(fileURLWithPath: "/Applications/\($0).app")) }
+private func entries(_ pairs: [(name: String, fileName: String)]) -> [AppEntry] {
+  pairs.map {
+    AppEntry(
+      name: $0.name, fileName: $0.fileName,
+      url: URL(fileURLWithPath: "/Applications/\($0.fileName).app"))
+  }
 }
 
 private func rankedNames(_ query: String, _ names: [String]) -> [String] {
-  rank(query: query, apps: entries(names)).map(\.name)
+  rank(query: query, apps: entries(names.map { ($0, $0) })).map(\.name)
 }
+
+private let japaneseApps = entries([
+  ("システム設定", "System Settings"), ("Safari", "Safari"), ("計算機", "Calculator"),
+])
 
 @Test func nonSubsequenceIsNil() {
   #expect(fuzzyScore(query: "xyz", candidate: "Safari") == nil)
@@ -39,6 +47,22 @@ private func rankedNames(_ query: String, _ names: [String]) -> [String] {
   #expect(rankedNames("not", ["Notes Pro", "Notes"]) == ["Notes", "Notes Pro"])
 }
 
+@Test func localizedNameMatches() {
+  let found = rank(query: "設定", apps: japaneseApps)
+  #expect(found.map(\.fileName) == ["System Settings"])
+  #expect(found.first?.name == "システム設定")
+}
+
+@Test func englishNameStillMatches() {
+  #expect(rank(query: "sys", apps: japaneseApps).map(\.fileName) == ["System Settings"])
+}
+
+@Test func betterOfTwoNamesRanks() {
+  // 「Terminal」はローカライズ名では中間で、英語名では先頭で一致する。「Xterm」はどちらでも中間で一致し、名前が短い
+  let apps = entries([("xterm", "Xterm"), ("プレterm", "Terminal")])
+  #expect(rank(query: "term", apps: apps).map(\.fileName) == ["Terminal", "Xterm"])
+}
+
 @Test func emptyQueryReturnsAllByName() {
   #expect(rankedNames("", ["Safari", "iMovie", "Calendar"]) == ["Calendar", "iMovie", "Safari"])
 }
@@ -62,6 +86,7 @@ private func rankedNames(_ query: String, _ names: [String]) -> [String] {
   try link.setResourceValues(hidden)
   link.removeAllCachedResourceValues()
   try #require(link.resourceValues(forKeys: [.isHiddenKey]).isHidden == true)
-  let names = scanApplications(in: [root, root.appendingPathComponent("missing")]).map(\.name)
-  #expect(names.sorted() == ["A", "B", "D"])
+  let apps = scanApplications(in: [root, root.appendingPathComponent("missing")])
+  #expect(apps.map(\.fileName).sorted() == ["A", "B", "D"])
+  #expect(apps.map(\.name).sorted() == ["A", "B", "D"])
 }

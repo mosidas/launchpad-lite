@@ -56,6 +56,8 @@ cat > "$app/Contents/Info.plist" <<PLIST
   <string>LaunchpadLite</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
+  <key>CFBundleAllowMixedLocalizations</key>
+  <true/>
   <key>LSUIElement</key>
   <true/>
   <key>LSMinimumSystemVersion</key>
