@@ -165,7 +165,8 @@ private func setModificationDate(_ url: URL) throws {
   #expect(catalog.apps().map(\.fileName) == ["D"])
 }
 
-@Test func scanSkipsUnreadableDirectoryAndKeepsOtherSources() throws {
+@Test(.disabled(if: getuid() == 0, "root は権限の検査を素通りする"))
+func scanSkipsUnreadableDirectoryAndKeepsOtherSources() throws {
   let root = try makeTempDir()
   let other = try makeTempDir()
   let locked = root.appendingPathComponent("Locked")

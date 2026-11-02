@@ -79,11 +79,10 @@ func rank(query: String, apps: [AppEntry]) -> [AppEntry] {
 /// 走査の結果と、結果が古くなったかを判定するためのディレクトリとその更新日時。
 struct AppScan {
   let apps: [AppEntry]
-  let watched: [URL]
-  let dates: [Date?]
+  let watched: [(url: URL, date: Date?)]
 
   /// watched のどれにも項目の追加・削除が無ければ真。
-  var isCurrent: Bool { watched.map(modificationDate) == dates }
+  var isCurrent: Bool { watched.allSatisfy { modificationDate($0.url) == $0.date } }
 }
 
 /// 走査の結果を持ち、ディレクトリが変わったときだけ走査し直す。
@@ -132,7 +131,9 @@ func scanApplications(in sources: [AppSource]) -> AppScan {
   let fm = FileManager.default
   var seen = Set<String>()
   var apps: [AppEntry] = []
-  var watched: [URL] = []
+  var watched: [(url: URL, date: Date?)] = []
+  // 日時はディレクトリを読む前に取る。読んでいる間に増えた項目は日時の食い違いとして次の判定で見つかる。
+  func watch(_ url: URL) { watched.append((url, modificationDate(url))) }
   func add(_ url: URL) {
     let fileName = url.deletingPathExtension().lastPathComponent
     guard seen.insert(fileName).inserted else { return }
@@ -145,7 +146,7 @@ func scanApplications(in sources: [AppSource]) -> AppScan {
   for source in sources {
     switch source {
     case .applications(let root):
-      watched.append(root)
+      watch(root)
       guard fm.fileExists(atPath: root.path),
         let items = fm.enumerator(
           at: root, includingPropertiesForKeys: [.isDirectoryKey, .isPackageKey],
@@ -161,11 +162,12 @@ func scanApplications(in sources: [AppSource]) -> AppScan {
         } else if let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isPackageKey]),
           values.isDirectory == true, values.isPackage != true
         {
-          watched.append(url)
+          // 列挙は前順なので、この時点では子をまだ読んでいない。
+          watch(url)
         }
       }
     case .systemComponents(let root):
-      watched.append(root)
+      watch(root)
       guard fm.fileExists(atPath: root.path) else { continue }
       let items: [URL]
       do {
@@ -183,5 +185,5 @@ func scanApplications(in sources: [AppSource]) -> AppScan {
       }
     }
   }
-  return AppScan(apps: apps, watched: watched, dates: watched.map(modificationDate))
+  return AppScan(apps: apps, watched: watched)
 }
