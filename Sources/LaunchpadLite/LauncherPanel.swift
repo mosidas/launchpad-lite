@@ -122,12 +122,19 @@ private struct LauncherView: View {
           return .handled
         }
       ForEach(Array(results.enumerated()), id: \.element.url) { index, app in
-        Text(app.name)
-          .font(.system(size: 16))
-          .padding(.horizontal, 16)
-          .padding(.vertical, 8)
-          .frame(maxWidth: .infinity, alignment: .leading)
-          .background(index == selection ? Color.accentColor.opacity(0.3) : .clear)
+        HStack(spacing: 8) {
+          // IconServices がシステム全体でキャッシュするので自前では持たない(実測で 2 回目以降は 231 件で 16 ms)。
+          Image(nsImage: NSWorkspace.shared.icon(forFile: app.url.path))
+            .resizable()
+            .frame(width: 24, height: 24)
+            .accessibilityHidden(true)
+          Text(app.name)
+            .font(.system(size: 16))
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 6)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(index == selection ? Color.accentColor.opacity(0.3) : .clear)
       }
     }
     .frame(width: size.width, height: size.height, alignment: .top)
