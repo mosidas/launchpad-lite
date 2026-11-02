@@ -19,6 +19,8 @@ Raycast の代わりに使う、最小限の macOS ランチャー。アプリ�
 
 ランチャーでは、アプリを英語名と Finder の表示名(例: システム設定)のどちらでも検索できる。
 
+3 文字以上の入力では、1 文字の打ち間違い(例: 「safrai」で Safari)でもアプリが見つかる。正しく一致したアプリは、打ち間違いで見つかったアプリより先に出る。
+
 検索の対象は、/Applications・/System/Applications・~/Applications のすべてのアプリと、/System/Library/CoreServices にある Finder などの利用者が開くアプリである。CoreServices の常駐のヘルパーは対象にしない。
 
 アプリの追加・削除は、次にランチャーを開いたときに反映される。

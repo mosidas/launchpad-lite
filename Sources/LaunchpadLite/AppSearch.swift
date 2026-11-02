@@ -57,23 +57,42 @@ func fuzzyScore(query: String, candidate: String) -> Int? {
   return best.compactMap { $0 }.max()
 }
 
-/// query が空なら名前順に全件を返す。空でなければ表示名とファイル名の良いほうのスコアで、
-/// 一致したものをスコア降順・名前の短い順・名前順で返す。
+/// 一致の段。宣言順に比べるので、どの誤字の一致も正しい一致より下になる。
+enum Match: Comparable {
+  case typo(Int)
+  case exact(Int)
+}
+
+/// 表示名とファイル名の良いほうのスコアで、query が app に一致するかを返す。
+/// 部分列なら exact。そうでなく 1 文字を消すと部分列になるなら typo(置換・入れ替わり・余分の 1 文字)。
+/// 1 文字の抜けはもともと部分列なので exact になる。
+func match(query: String, app: AppEntry) -> Match? {
+  func best(_ q: String) -> Int? {
+    [app.name, app.fileName].compactMap { fuzzyScore(query: q, candidate: $0) }.max()
+  }
+  if let score = best(query) { return .exact(score) }
+  // shortcut: 誤字は 3 文字以上で 1 文字だけ。2 文字の誤字を拾う要望が出たら置換の表を検討する
+  guard query.count >= 3 else { return nil }
+  return query.indices.compactMap { i in
+    var variant = query
+    variant.remove(at: i)
+    return best(variant)
+  }.max().map(Match.typo)
+}
+
+/// query が空なら名前順に全件を返す。空でなければ一致したものを、一致の良い順・名前の短い順・名前順で返す。
 func rank(query: String, apps: [AppEntry]) -> [AppEntry] {
   let byName = { (a: AppEntry, b: AppEntry) in
     a.name.localizedStandardCompare(b.name) == .orderedAscending
   }
   if query.isEmpty { return apps.sorted(by: byName) }
-  return apps.compactMap { app in
-    [app.name, app.fileName].compactMap { fuzzyScore(query: query, candidate: $0) }.max()
-      .map { (app, $0) }
-  }
-  .sorted { a, b in
-    if a.1 != b.1 { return a.1 > b.1 }
-    if a.0.name.count != b.0.name.count { return a.0.name.count < b.0.name.count }
-    return byName(a.0, b.0)
-  }
-  .map(\.0)
+  return apps.compactMap { app in match(query: query, app: app).map { (app, $0) } }
+    .sorted { a, b in
+      if a.1 != b.1 { return a.1 > b.1 }
+      if a.0.name.count != b.0.name.count { return a.0.name.count < b.0.name.count }
+      return byName(a.0, b.0)
+    }
+    .map(\.0)
 }
 
 /// 走査の結果と、結果が古くなったかを判定するためのディレクトリとその更新日時。

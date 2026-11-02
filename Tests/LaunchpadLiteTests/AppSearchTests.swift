@@ -67,6 +67,39 @@ private let japaneseApps = entries([
   #expect(rankedNames("", ["Safari", "iMovie", "Calendar"]) == ["Calendar", "iMovie", "Safari"])
 }
 
+@Test func transposedTypoMatches() {
+  #expect(rankedNames("safrai", ["Safari"]) == ["Safari"])
+}
+
+@Test func substitutedTypoMatches() {
+  #expect(rankedNames("safaro", ["Safari"]) == ["Safari"])
+}
+
+@Test func extraCharTypoMatches() {
+  #expect(rankedNames("safarri", ["Safari"]) == ["Safari"])
+}
+
+@Test func missingCharIsExactMatch() {
+  let safari = entries([("Safari", "Safari")])[0]
+  let found = match(query: "safri", app: safari)
+  guard case .exact? = found else {
+    Issue.record("1 文字の抜けは正しい一致になる: \(String(describing: found))")
+    return
+  }
+}
+
+@Test func typoRanksBelowExactMatch() {
+  #expect(rankedNames("safrai", ["Safari", "Safe Rail"]) == ["Safe Rail", "Safari"])
+}
+
+@Test func twoEditsDoNotMatch() {
+  #expect(rankedNames("qwfari", ["Safari"]).isEmpty)
+}
+
+@Test func shortQueryHasNoTypoMatch() {
+  #expect(rankedNames("sx", ["Safari"]).isEmpty)
+}
+
 @Test func scanFindsNestedAppsButNotAppsInsideApps() throws {
   let fm = FileManager.default
   let root = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
