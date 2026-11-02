@@ -8,11 +8,21 @@ struct AppEntry: Equatable {
   let url: URL
 }
 
-/// 検索対象のディレクトリ。
-let applicationDirectories = [
-  URL(fileURLWithPath: "/Applications"),
-  URL(fileURLWithPath: "/System/Applications"),
-  FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Applications"),
+/// 検索対象の置き場所と、そこでの集め方。
+enum AppSource {
+  /// 下の階層まで、すべての .app を集める。
+  case applications(URL)
+  /// 直下だけを見て、利用者が起動する .app に絞る。
+  case systemComponents(URL)
+}
+
+let appSources: [AppSource] = [
+  .applications(URL(fileURLWithPath: "/Applications")),
+  .applications(URL(fileURLWithPath: "/System/Applications")),
+  .applications(
+    FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Applications")),
+  .systemComponents(URL(fileURLWithPath: "/System/Library/CoreServices")),
+  .systemComponents(URL(fileURLWithPath: "/System/Library/CoreServices/Applications")),
 ]
 
 /// query が candidate の部分列なら、一致の良さを返す(大きいほど良い)。部分列でなければ nil。
@@ -66,25 +76,112 @@ func rank(query: String, apps: [AppEntry]) -> [AppEntry] {
   .map(\.0)
 }
 
-/// dirs の下を走査して .app を集める。.app の中は見ない。同じファイル名は先に見つかったほうを残す。
-func scanApplications(in dirs: [URL]) -> [AppEntry] {
+/// 走査の結果と、結果が古くなったかを判定するためのディレクトリとその更新日時。
+struct AppScan {
+  let apps: [AppEntry]
+  let watched: [URL]
+  let dates: [Date?]
+
+  /// watched のどれにも項目の追加・削除が無ければ真。
+  var isCurrent: Bool { watched.map(modificationDate) == dates }
+}
+
+/// 走査の結果を持ち、ディレクトリが変わったときだけ走査し直す。
+struct AppCatalog {
+  private let sources: [AppSource]
+  private var scan: AppScan?
+
+  init(sources: [AppSource]) { self.sources = sources }
+
+  mutating func apps() -> [AppEntry] {
+    if let scan, scan.isCurrent { return scan.apps }
+    let start = ContinuousClock.now
+    let scan = scanApplications(in: sources)
+    let ms = Int((ContinuousClock.now - start) / .milliseconds(1))
+    NSLog("LaunchpadLite: アプリを走査した(%ld 件、%ld ms)", scan.apps.count, ms)
+    self.scan = scan
+    return scan.apps
+  }
+}
+
+// URL のリソース値はキャッシュされて変更を見落とすため、毎回 stat する。
+private func modificationDate(_ url: URL) -> Date? {
+  (try? FileManager.default.attributesOfItem(atPath: url.path))?[.modificationDate] as? Date
+}
+
+/// メニューバー常駐(LSUIElement)・背景専用(LSBackgroundOnly)でなく、アイコンを持つなら真。
+func isUserFacing(info: [String: Any]) -> Bool {
+  // LSUIElement などは Bool の場合と文字列 "1" の場合がある。
+  func flag(_ key: String) -> Bool {
+    (info[key] as? NSNumber)?.boolValue ?? (info[key] as? NSString)?.boolValue ?? false
+  }
+  return !flag("LSUIElement") && !flag("LSBackgroundOnly")
+    && (info["CFBundleIconFile"] != nil || info["CFBundleIconName"] != nil)
+}
+
+private func logUnreadable(_ url: URL, _ error: Error) {
+  NSLog(
+    "%@",
+    "LaunchpadLite: ディレクトリを読めないので飛ばした path=\(url.path.debugDescription) error=\(String(describing: error).debugDescription)"
+  )
+}
+
+/// sources を順に走査して .app を集める。.app の中は見ない。同じファイル名は先に見つかったほうを残す。
+/// 存在しない根は飛ばし、読めないディレクトリはログに残して飛ばす。
+func scanApplications(in sources: [AppSource]) -> AppScan {
+  let fm = FileManager.default
   var seen = Set<String>()
-  var result: [AppEntry] = []
-  for dir in dirs {
-    guard
-      let items = FileManager.default.enumerator(
-        at: dir, includingPropertiesForKeys: nil,
-        options: .skipsPackageDescendants)
-    else { continue }
-    for case let url as URL in items where url.pathExtension == "app" {
-      let fileName = url.deletingPathExtension().lastPathComponent
-      guard seen.insert(fileName).inserted else { continue }
-      // Finder で「すべての拡張子を表示」が有効だと displayName は「.app」付きで返る。
-      // deletingPathExtension は「Foo 2.0」の「.0」も消すため、末尾の「.app」だけを外す。
-      var name = FileManager.default.displayName(atPath: url.path)
-      if name.hasSuffix(".app") { name.removeLast(4) }
-      result.append(AppEntry(name: name, fileName: fileName, url: url))
+  var apps: [AppEntry] = []
+  var watched: [URL] = []
+  func add(_ url: URL) {
+    let fileName = url.deletingPathExtension().lastPathComponent
+    guard seen.insert(fileName).inserted else { return }
+    // Finder で「すべての拡張子を表示」が有効だと displayName は「.app」付きで返る。
+    // deletingPathExtension は「Foo 2.0」の「.0」も消すため、末尾の「.app」だけを外す。
+    var name = fm.displayName(atPath: url.path)
+    if name.hasSuffix(".app") { name.removeLast(4) }
+    apps.append(AppEntry(name: name, fileName: fileName, url: url))
+  }
+  for source in sources {
+    switch source {
+    case .applications(let root):
+      watched.append(root)
+      guard fm.fileExists(atPath: root.path),
+        let items = fm.enumerator(
+          at: root, includingPropertiesForKeys: [.isDirectoryKey, .isPackageKey],
+          options: .skipsPackageDescendants,
+          errorHandler: { url, error in
+            logUnreadable(url, error)
+            return true
+          })
+      else { continue }
+      for case let url as URL in items {
+        if url.pathExtension == "app" {
+          add(url)
+        } else if let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isPackageKey]),
+          values.isDirectory == true, values.isPackage != true
+        {
+          watched.append(url)
+        }
+      }
+    case .systemComponents(let root):
+      watched.append(root)
+      guard fm.fileExists(atPath: root.path) else { continue }
+      let items: [URL]
+      do {
+        items = try fm.contentsOfDirectory(at: root, includingPropertiesForKeys: nil)
+      } catch {
+        logUnreadable(root, error)
+        continue
+      }
+      for url in items where url.pathExtension == "app" {
+        let plist = url.appendingPathComponent("Contents/Info.plist")
+        // Bundle(url:) はプロセス内でキャッシュされるため、Info.plist を直接読む。
+        if let info = NSDictionary(contentsOf: plist) as? [String: Any], isUserFacing(info: info) {
+          add(url)
+        }
+      }
     }
   }
-  return result
+  return AppScan(apps: apps, watched: watched, dates: watched.map(modificationDate))
 }

@@ -1,11 +1,13 @@
 import AppKit
 import SwiftUI
 
-/// ホットキーで開閉するランチャー。開くたびにアプリの一覧を取り直す。
+/// ホットキーで開閉するランチャー。アプリの一覧は起動時に走査し、開いたときに置き場所のディレクトリが
+/// 変わっていれば走査し直す。
 final class LauncherPanel: NSPanel, NSWindowDelegate {
   private static let size = NSSize(width: 600, height: 360)
   /// 開く前に前面だったアプリ。閉じたときに前面へ戻す。
   private var previousApp: NSRunningApplication?
+  private var catalog = AppCatalog(sources: appSources)
 
   init() {
     super.init(
@@ -17,6 +19,7 @@ final class LauncherPanel: NSPanel, NSWindowDelegate {
     backgroundColor = .clear
     hasShadow = true
     delegate = self
+    _ = catalog.apps()
   }
 
   override var canBecomeKey: Bool { true }
@@ -29,7 +32,7 @@ final class LauncherPanel: NSPanel, NSWindowDelegate {
     // 新しいビューに差し替えて、入力と選択を空に戻す。
     contentView = NSHostingView(
       rootView: LauncherView(
-        apps: scanApplications(in: applicationDirectories), size: Self.size,
+        apps: catalog.apps(), size: Self.size,
         onLaunch: { [weak self] app in
           NSWorkspace.shared.openApplication(
             at: app.url, configuration: NSWorkspace.OpenConfiguration(), completionHandler: nil)
