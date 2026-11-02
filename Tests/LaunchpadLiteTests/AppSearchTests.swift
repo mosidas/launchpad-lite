@@ -71,7 +71,7 @@ private let japaneseApps = entries([
   let fm = FileManager.default
   let root = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString)
   defer { try? fm.removeItem(at: root) }
-  for path in ["A.app/Contents/Inner.app", "Utilities/B.app", "Other", "C.txt"] {
+  for path in ["A.app/Contents/Inner.app", "Utilities/B.app", "Foo 2.0.app", "Other", "C.txt"] {
     try fm.createDirectory(
       at: root.appendingPathComponent(path), withIntermediateDirectories: true)
   }
@@ -87,6 +87,6 @@ private let japaneseApps = entries([
   link.removeAllCachedResourceValues()
   try #require(link.resourceValues(forKeys: [.isHiddenKey]).isHidden == true)
   let apps = scanApplications(in: [root, root.appendingPathComponent("missing")])
-  #expect(apps.map(\.fileName).sorted() == ["A", "B", "D"])
-  #expect(apps.map(\.name).sorted() == ["A", "B", "D"])
+  #expect(apps.map(\.fileName).sorted() == ["A", "B", "D", "Foo 2.0"])
+  #expect(apps.map(\.name).sorted() == ["A", "B", "D", "Foo 2.0"])
 }

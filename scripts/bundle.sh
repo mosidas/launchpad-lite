@@ -56,6 +56,7 @@ cat > "$app/Contents/Info.plist" <<PLIST
   <string>LaunchpadLite</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
+  <!-- このキーが無いと FileManager.displayName(atPath:) がほかのアプリの名前を英語名で返す -->
   <key>CFBundleAllowMixedLocalizations</key>
   <true/>
   <key>LSUIElement</key>
