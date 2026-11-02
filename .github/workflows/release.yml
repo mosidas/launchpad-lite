@@ -14,7 +14,7 @@ jobs:
     runs-on: macos-latest
     permissions:
       contents: write
-    # 既存の run の実測 1〜4 分の約 5 倍。
+    # 4 リポジトリ(launchpad-lite・rename・nullops・lazy-finder)の既存 run の実測 1〜4 分の約 5 倍。
     timeout-minutes: 20
 
     steps:
@@ -43,7 +43,7 @@ jobs:
       - name: Verify app
         shell: bash
         run: |
-          codesign --verify --strict dist/LaunchpadLite.app
+          codesign --verify --strict dist/LaunchpadLite.app || { echo "::error title=成果物の検証::署名の検証に失敗した"; exit 1; }
           actual="$(plutil -extract CFBundleShortVersionString raw dist/LaunchpadLite.app/Contents/Info.plist)"
           if [[ "$actual" != "${GITHUB_REF_NAME#v}" ]]; then
             echo "::error title=成果物の検証::Info.plist のバージョン $actual がタグ $GITHUB_REF_NAME と一致しない"
