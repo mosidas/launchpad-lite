@@ -32,10 +32,9 @@ final class LauncherPanel: NSPanel, NSWindowDelegate {
     // 新しいビューに差し替えて、入力と選択を空に戻す。
     contentView = NSHostingView(
       rootView: LauncherView(
-        apps: catalog.apps(), size: Self.size,
+        apps: catalog.apps(), history: currentLaunchHistory, size: Self.size,
         onLaunch: { [weak self] app in
-          NSWorkspace.shared.openApplication(
-            at: app.url, configuration: NSWorkspace.OpenConfiguration(), completionHandler: nil)
+          Task { @MainActor in await launch(app) }
           // 起動したアプリが前面になるので、元のアプリは戻さない。
           self?.close(restoringFocus: false)
         },
@@ -65,8 +64,35 @@ final class LauncherPanel: NSPanel, NSWindowDelegate {
   }
 }
 
+/// app を起動し、成功したときだけ履歴に残す。失敗したらログとアラートを出す。
+@MainActor private func launch(_ app: AppEntry) async {
+  do {
+    _ = try await NSWorkspace.shared.openApplication(
+      at: app.url, configuration: NSWorkspace.OpenConfiguration())
+  } catch let error as CocoaError where error.code == .userCancelled {
+    // 利用者が OS のダイアログ(初回起動の確認など)で取り消した。
+    return
+  } catch {
+    let nsError = error as NSError
+    NSLog(
+      "%@",
+      "LaunchpadLite: アプリを起動できなかった(\(app.fileName.debugDescription)、\(nsError.domain) \(nsError.code))"
+    )
+    NSApp.activate()
+    let alert = NSAlert()
+    alert.messageText = "「\(app.name)」を開けませんでした"
+    alert.informativeText = "アプリが移動または削除されていないかを確かめて、もう一度お試しください。"
+    alert.addButton(withTitle: "OK")
+    alert.runModal()
+    return
+  }
+  currentLaunchHistory.recordLaunch(of: app.url, at: .now)
+  saveLaunchHistory(currentLaunchHistory)
+}
+
 private struct LauncherView: View {
   let apps: [AppEntry]
+  let history: LaunchHistory
   let size: NSSize
   let onLaunch: (AppEntry) -> Void
   let onClose: () -> Void
@@ -76,7 +102,7 @@ private struct LauncherView: View {
   @FocusState private var focused: Bool
 
   var body: some View {
-    let results = Array(rank(query: query, apps: apps).prefix(8))
+    let results = Array(rank(query: query, apps: apps, history: history, now: .now).prefix(8))
     VStack(alignment: .leading, spacing: 0) {
       TextField("アプリを検索", text: $query)
         .textFieldStyle(.plain)

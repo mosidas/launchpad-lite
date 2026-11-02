@@ -81,19 +81,23 @@ func match(query: String, app: AppEntry) -> Match? {
   }.max().map(Match.typo)
 }
 
-/// query が空なら名前順に全件を返す。空でなければ一致したものを、一致の良い順・名前の短い順・名前順で返す。
-func rank(query: String, apps: [AppEntry]) -> [AppEntry] {
-  let byName = { (a: AppEntry, b: AppEntry) in
-    a.name.localizedStandardCompare(b.name) == .orderedAscending
-  }
-  if query.isEmpty { return apps.sorted(by: byName) }
-  return apps.compactMap { app in match(query: query, app: app).map { (app, $0) } }
-    .sorted { a, b in
-      if a.1 != b.1 { return a.1 > b.1 }
-      if a.0.name.count != b.0.name.count { return a.0.name.count < b.0.name.count }
-      return byName(a.0, b.0)
+/// query が空なら全件を、起動履歴の多い順・名前順で返す。空でなければ一致したものを、一致の良い順・
+/// 起動履歴の多い順・名前の短い順・名前順で返す。履歴は一致の良さが等しいときだけ並びを変える。
+func rank(query: String, apps: [AppEntry], history: LaunchHistory, now: Date) -> [AppEntry] {
+  apps.compactMap { app in
+    match(query: query, app: app).map {
+      (app: app, match: $0, frecency: history.frecency(of: app, now: now))
     }
-    .map(\.0)
+  }
+  .sorted { a, b in
+    if a.match != b.match { return a.match > b.match }
+    if a.frecency != b.frecency { return a.frecency > b.frecency }
+    if !query.isEmpty, a.app.name.count != b.app.name.count {
+      return a.app.name.count < b.app.name.count
+    }
+    return a.app.name.localizedStandardCompare(b.app.name) == .orderedAscending
+  }
+  .map(\.app)
 }
 
 /// 走査の結果と、結果が古くなったかを判定するためのディレクトリとその更新日時。

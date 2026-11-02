@@ -11,8 +11,18 @@ private func entries(_ pairs: [(name: String, fileName: String)]) -> [AppEntry] 
   }
 }
 
-private func rankedNames(_ query: String, _ names: [String]) -> [String] {
-  rank(query: query, apps: entries(names.map { ($0, $0) })).map(\.name)
+private let now = Date(timeIntervalSince1970: 1_800_000_000)
+private let day: TimeInterval = 86_400
+
+/// names を表示名・ファイル名の両方に使い、launches の名前に起動履歴を付けて並べる。
+private func rankedNames(
+  _ query: String, _ names: [String], launches: [String: LaunchRecord] = [:]
+) -> [String] {
+  let history = LaunchHistory(
+    records: Dictionary(
+      uniqueKeysWithValues: launches.map { ("/Applications/\($0.key).app", $0.value) }))
+  return rank(query: query, apps: entries(names.map { ($0, $0) }), history: history, now: now)
+    .map(\.name)
 }
 
 private let japaneseApps = entries([
@@ -48,23 +58,70 @@ private let japaneseApps = entries([
 }
 
 @Test func localizedNameMatches() {
-  let found = rank(query: "設定", apps: japaneseApps)
+  let found = rank(query: "設定", apps: japaneseApps, history: LaunchHistory(), now: now)
   #expect(found.map(\.fileName) == ["System Settings"])
   #expect(found.first?.name == "システム設定")
 }
 
 @Test func englishNameStillMatches() {
-  #expect(rank(query: "sys", apps: japaneseApps).map(\.fileName) == ["System Settings"])
+  #expect(
+    rank(query: "sys", apps: japaneseApps, history: LaunchHistory(), now: now).map(\.fileName) == [
+      "System Settings"
+    ])
 }
 
 @Test func betterOfTwoNamesRanks() {
   // 「Terminal」はローカライズ名では中間で、英語名では先頭で一致する。「Xterm」はどちらでも中間で一致し、名前が短い
   let apps = entries([("xterm", "Xterm"), ("プレterm", "Terminal")])
-  #expect(rank(query: "term", apps: apps).map(\.fileName) == ["Terminal", "Xterm"])
+  #expect(
+    rank(query: "term", apps: apps, history: LaunchHistory(), now: now).map(\.fileName) == [
+      "Terminal", "Xterm",
+    ])
 }
 
 @Test func emptyQueryReturnsAllByName() {
   #expect(rankedNames("", ["Safari", "iMovie", "Calendar"]) == ["Calendar", "iMovie", "Safari"])
+}
+
+@Test func historyBreaksTie() {
+  let launches = ["Notes Pro": LaunchRecord(count: 1, lastLaunched: now - day)]
+  #expect(
+    rankedNames("not", ["Notes", "Notes Pro"], launches: launches) == ["Notes Pro", "Notes"])
+}
+
+@Test func recentWinsAtSameCount() {
+  let launches = [
+    "Notes": LaunchRecord(count: 3, lastLaunched: now - 30 * day),
+    "Notes Pro": LaunchRecord(count: 3, lastLaunched: now - day),
+  ]
+  #expect(
+    rankedNames("not", ["Notes", "Notes Pro"], launches: launches) == ["Notes Pro", "Notes"])
+}
+
+@Test func frequentWinsAtSameTime() {
+  let launches = [
+    "Notes": LaunchRecord(count: 1, lastLaunched: now - day),
+    "Notes Pro": LaunchRecord(count: 10, lastLaunched: now - day),
+  ]
+  #expect(
+    rankedNames("not", ["Notes", "Notes Pro"], launches: launches) == ["Notes Pro", "Notes"])
+}
+
+@Test func historyDoesNotBeatBetterScore() {
+  let launches = ["Preterm": LaunchRecord(count: 100, lastLaunched: now)]
+  #expect(
+    rankedNames("term", ["Preterm", "Terminal"], launches: launches) == ["Terminal", "Preterm"])
+}
+
+@Test func emptyQueryOrdersByHistoryThenName() {
+  let launches = [
+    "Safari": LaunchRecord(count: 1, lastLaunched: now - day),
+    "Zoom": LaunchRecord(count: 5, lastLaunched: now - day),
+  ]
+  #expect(
+    rankedNames("", ["Safari", "iMovie", "Zoom", "Calendar"], launches: launches) == [
+      "Zoom", "Safari", "Calendar", "iMovie",
+    ])
 }
 
 @Test func transposedTypoMatches() {
