@@ -4,6 +4,30 @@ import SwiftUI
 
 @MainActor var settingsWindow: NSWindow?
 
+/// 設定ウィンドウのサイドバーに並ぶ 1 ページ。題名を選択の識別に使うので、題名は一意にする。
+struct SettingsPage: Identifiable {
+  let title: String
+  let systemImage: String
+  let content: @MainActor () -> AnyView
+  var id: String { title }
+
+  init<Content: View>(
+    _ title: String, systemImage: String,
+    @ViewBuilder content: @escaping @MainActor () -> Content
+  ) {
+    self.title = title
+    self.systemImage = systemImage
+    self.content = { AnyView(content()) }
+  }
+}
+
+/// 設定のページの一覧。サイドバーにこの順で並ぶ。ページはこの一覧へ 1 要素を足して加える。
+@MainActor let settingsPages: [SettingsPage] = [
+  SettingsPage("ホットキー", systemImage: "command") { HotKeySettingsView() },
+  SettingsPage("マウス", systemImage: "computermouse") { MouseSettingsView() },
+  SettingsPage("キーボード", systemImage: "keyboard") { KeyboardSettingsView() },
+]
+
 /// 設定ウィンドウを開く。ウィンドウは 1 つだけ作って使い回す。
 @MainActor
 func showSettings() {
@@ -11,26 +35,43 @@ func showSettings() {
     settingsWindow
     ?? {
       let window = NSWindow(
-        contentRect: .zero, styleMask: [.titled, .closable], backing: .buffered, defer: false)
+        contentRect: .zero, styleMask: [.titled, .closable, .resizable], backing: .buffered,
+        defer: false)
       window.title = "LaunchpadLite の設定"
       window.isReleasedWhenClosed = false
+      window.setContentSize(NSSize(width: 760, height: 560))
       settingsWindow = window
       return window
     }()
   // 開くたびにビューを作り直し、保存値を読み直す。
-  window.contentView = NSHostingView(
-    rootView: TabView {
-      SettingsView().tabItem { Text("ホットキー") }
-      MouseSettingsView().tabItem { Text("マウス") }
-      KeyboardSettingsView().tabItem { Text("キーボード") }
-    })
+  // 内容の大きさにウィンドウを合わせると、ページを切り替えるたびにウィンドウの大きさが変わるため、最小の大きさだけを伝える。
+  let hosting = NSHostingView(rootView: SettingsRootView())
+  hosting.sizingOptions = [.minSize]
+  window.contentView = hosting
   window.center()
   NSApp.activate()
   window.makeKeyAndOrderFront(nil)
 }
 
+/// サイドバーでページを選び、右側に選んだページを出す。
+private struct SettingsRootView: View {
+  @State private var selection: SettingsPage.ID? = settingsPages[0].id
+
+  var body: some View {
+    NavigationSplitView(columnVisibility: .constant(.all)) {
+      List(settingsPages, selection: $selection) { Label($0.title, systemImage: $0.systemImage) }
+        .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 220)
+        .toolbar(removing: .sidebarToggle)
+    } detail: {
+      ScrollView {
+        (settingsPages.first { $0.id == selection } ?? settingsPages[0]).content()
+      }
+    }
+  }
+}
+
 /// ホットキーの一覧。行を押してキーを押すと記録し、その場で登録し直す。
-private struct SettingsView: View {
+private struct HotKeySettingsView: View {
   @State private var combos = Dictionary(
     uniqueKeysWithValues: HotKeyAction.allCases.map { ($0, loadKeyCombo($0)) })
   @State private var recording: HotKeyAction?
