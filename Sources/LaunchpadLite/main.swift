@@ -10,10 +10,12 @@ _ = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDict
 // トップレベルで保持する。解放されるとメニューバーのアイコンが消える。
 let menuBar = MenuBar()
 let launcher = LauncherPanel()
+let floatingScreenshots = FloatingScreenshots()
 performHotKey = { action in
   switch action {
   case .launcher: launcher.toggle()
   case .screenshot: openScreenshotToolbar()
+  case .floatingScreenshot: floatingScreenshots.capture()
   case .leftHalf: apply(.leftHalf)
   case .rightHalf: apply(.rightHalf)
   case .topHalf: apply(.topHalf)

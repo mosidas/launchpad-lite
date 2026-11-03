@@ -9,7 +9,7 @@ struct KeyCombo: Equatable, Codable {
 
 /// ホットキーで起こす動作。並びは README のホットキー表の順で、添字 +1 を EventHotKeyID.id に使う。
 enum HotKeyAction: String, CaseIterable {
-  case launcher, screenshot
+  case launcher, screenshot, floatingScreenshot
   case leftHalf, rightHalf, topHalf, bottomHalf
   case topRight, topLeft, bottomLeft, bottomRight
   case maximize, centerThreeQuarters
@@ -20,6 +20,7 @@ enum HotKeyAction: String, CaseIterable {
     switch self {
     case .launcher: "ランチャーを開く・閉じる"
     case .screenshot: "スクリーンショットのツールバーを開く"
+    case .floatingScreenshot: "範囲を撮って画面に浮かべる"
     case .leftHalf: "左半分"
     case .rightHalf: "右半分"
     case .topHalf: "上半分"
@@ -42,6 +43,7 @@ enum HotKeyAction: String, CaseIterable {
       switch self {
       case .launcher: (kVK_Space, cmdKey)
       case .screenshot: (kVK_ANSI_S, cmdShift)
+      case .floatingScreenshot: (kVK_ANSI_7, cmdShift)
       case .leftHalf: (kVK_LeftArrow, cmdShift)
       case .rightHalf: (kVK_RightArrow, cmdShift)
       case .topHalf: (kVK_UpArrow, cmdShift)

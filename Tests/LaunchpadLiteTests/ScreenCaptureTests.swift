@@ -98,6 +98,16 @@ private func writePNG(to url: URL) throws {
       == CGRect(x: 100, y: 650, width: 300, height: 150))
 }
 
+@Test func floatingFrameTakesSizeFromImageAndTopLeftFromSelection() {
+  // 両端を含むため画像は selection より 1pt 大きい。窓は画像の寸法に合わせ、左上を selection にそろえる。
+  #expect(
+    floatingFrame(
+      selection: CGRect(x: 100, y: 200, width: 300, height: 150),
+      imagePixelSize: CGSize(width: 602, height: 302), primaryScreenHeight: 1000,
+      mouseLocation: CGPoint(x: 0, y: 0), backingScaleFactor: 2)
+      == CGRect(x: 100, y: 1000 - 200 - 151, width: 301, height: 151))
+}
+
 @Test func floatingFrameCentersImageOnMouseWithoutSelection() {
   #expect(
     floatingFrame(

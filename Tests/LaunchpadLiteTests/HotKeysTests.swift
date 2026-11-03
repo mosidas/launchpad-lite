@@ -15,7 +15,7 @@ private func withDefaults(_ body: (UserDefaults) -> Void) {
 
 @Test func defaultCombosAreDistinct() {
   let combos = HotKeyAction.allCases.map { [$0.defaultCombo.keyCode, $0.defaultCombo.modifiers] }
-  #expect(HotKeyAction.allCases.count == 15)
+  #expect(HotKeyAction.allCases.count == 16)
   #expect(Set(combos).count == combos.count)
 }
 
@@ -26,6 +26,12 @@ private func withDefaults(_ body: (UserDefaults) -> Void) {
   #expect(
     HotKeyAction.sleep.defaultCombo
       == KeyCombo(keyCode: UInt32(kVK_ANSI_S), modifiers: UInt32(cmdKey | optionKey)))
+}
+
+@Test func floatingScreenshotDefaultsToShiftCommand7() {
+  #expect(
+    HotKeyAction.floatingScreenshot.defaultCombo
+      == KeyCombo(keyCode: UInt32(kVK_ANSI_7), modifiers: UInt32(cmdKey | shiftKey)))
 }
 
 @Test func loadFallsBackToDefault() {
@@ -48,6 +54,21 @@ private func withDefaults(_ body: (UserDefaults) -> Void) {
     saveKeyCombo(combo, for: .launcher, to: defaults)
     #expect(loadKeyCombo(.launcher, from: defaults) == combo)
     #expect(loadKeyCombo(.sleep, from: defaults) == HotKeyAction.sleep.defaultCombo)
+  }
+}
+
+@Test func floatingScreenshotComboIsStoredUnderItsOwnKey() {
+  withDefaults { defaults in
+    let combo = KeyCombo(keyCode: UInt32(kVK_ANSI_8), modifiers: UInt32(cmdKey | shiftKey))
+    saveKeyCombo(combo, for: .floatingScreenshot, to: defaults)
+    #expect(loadKeyCombo(.floatingScreenshot, from: defaults) == combo)
+    #expect(loadKeyCombo(.screenshot, from: defaults) == HotKeyAction.screenshot.defaultCombo)
+
+    defaults.set(
+      [kVK_ANSI_9, controlKey | cmdKey], forKey: "hotKey.floatingScreenshot")
+    #expect(
+      loadKeyCombo(.floatingScreenshot, from: defaults)
+        == KeyCombo(keyCode: UInt32(kVK_ANSI_9), modifiers: UInt32(controlKey | cmdKey)))
   }
 }
 

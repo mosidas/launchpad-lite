@@ -49,17 +49,20 @@ func readCapture(from url: URL, selection: CGRect?, scale: CGFloat) throws -> Ca
     image: image, selection: placement(selection: selection, imagePixelSize: size, scale: scale))
 }
 
-/// 撮った画像を浮かべる矩形(Cocoa 座標)。selection があればその位置と大きさ、
-/// 無ければ画像のポイント寸法で mouseLocation(Cocoa 座標)を中心に置く。
+/// 撮った画像を浮かべる矩形(Cocoa 座標)。大きさは画像のポイント寸法にする。
+/// selection があればその左上に合わせ、無ければ mouseLocation(Cocoa 座標)を中心に置く。
+/// 画像は selection より 1pt 大きいので、selection の寸法で作ると画像が縮んでにじむ。
 func floatingFrame(
   selection: CGRect?, imagePixelSize: CGSize, primaryScreenHeight: CGFloat,
   mouseLocation: CGPoint, backingScaleFactor: CGFloat
 ) -> CGRect {
-  if let selection {
-    return axFrame(fromCocoa: selection, primaryScreenHeight: primaryScreenHeight)
-  }
   let width = imagePixelSize.width / backingScaleFactor
   let height = imagePixelSize.height / backingScaleFactor
+  if let selection {
+    return CGRect(
+      x: selection.minX, y: primaryScreenHeight - selection.minY - height, width: width,
+      height: height)
+  }
   return CGRect(
     x: mouseLocation.x - width / 2, y: mouseLocation.y - height / 2, width: width, height: height)
 }
@@ -100,6 +103,9 @@ func floatingFrame(
   else {
     NSLog("%@", "LaunchpadLite: スクリーンショットを取り消した status=0")
     return nil
+  }
+  if selection != nil, capture.selection == nil {
+    NSLog("%@", "LaunchpadLite: 範囲の観測を捨てた reason=selectionMismatch")
   }
   return capture
 }
