@@ -69,7 +69,7 @@ private func axVisibleFrame(_ screen: NSScreen) -> CGRect {
 
 /// 主画面(NSScreen.screens の先頭)の高さ。呼び出し元は画面を 1 つ以上持っている前提で呼ぶ。
 @MainActor
-private func primaryScreenHeight() -> CGFloat { NSScreen.screens[0].frame.height }
+func primaryScreenHeight() -> CGFloat { NSScreen.screens[0].frame.height }
 
 /// window の矩形を frame(AX 座標)にする。
 private func setFrame(_ window: AXUIElement, _ frame: CGRect) {

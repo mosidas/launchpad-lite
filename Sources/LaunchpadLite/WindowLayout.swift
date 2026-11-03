@@ -1,6 +1,7 @@
 import CoreGraphics
 
 /// Cocoa 座標(主画面の左下原点、y 上向き)の矩形を AX 座標(主画面の左上原点、y 下向き)へ変換する。
+/// 変換は対合で、CG/AX 座標から Cocoa 座標への変換にも使う。
 func axFrame(fromCocoa rect: CGRect, primaryScreenHeight: CGFloat) -> CGRect {
   CGRect(
     x: rect.minX, y: primaryScreenHeight - rect.maxY, width: rect.width, height: rect.height)
