@@ -24,6 +24,7 @@ struct SettingsPage: Identifiable {
 /// 設定のページの一覧。サイドバーにこの順で並ぶ。ページはこの一覧へ 1 要素を足して加える。
 @MainActor let settingsPages: [SettingsPage] = [
   SettingsPage("ホットキー", systemImage: "command") { HotKeySettingsView() },
+  SettingsPage("スクリーンショット", systemImage: "camera.viewfinder") { ScreenshotSettingsView() },
   SettingsPage("マウス", systemImage: "computermouse") { MouseSettingsView() },
   SettingsPage("キーボード", systemImage: "keyboard") { KeyboardSettingsView() },
 ]
