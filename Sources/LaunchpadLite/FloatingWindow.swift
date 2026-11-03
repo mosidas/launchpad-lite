@@ -110,9 +110,6 @@ final class FloatingWindow: NSWindow {
     contentView?.layer?.contents = image
     contentView?.layer?.contentsGravity = .resize
     contentView?.menu = makeMenu()
-    // 背景のドラッグで動かした後に mouseUp が届かない場合に備え、移動の終わりでも不透明度を戻す。
-    NotificationCenter.default.addObserver(
-      self, selector: #selector(restoreOpacity), name: NSWindow.didMoveNotification, object: self)
   }
 
   override var canBecomeKey: Bool { true }
@@ -132,14 +129,20 @@ final class FloatingWindow: NSWindow {
     alphaValue = opacity
   }
 
+  // 実測(macOS 26.6): アプリが前面のとき、背景のドラッグでも mouseDown はすぐ戻り、mouseUp が対で届く。
+  // 前面でないときの最初のクリックは mouseDown も mouseUp も届かずにウィンドウサーバーが窓を動かすので、
+  // 不透明度は変わらない。didMoveNotification はドラッグ中に何度も届くため、移動の終わりの判定に使えない。
   override func mouseDown(with event: NSEvent) {
+    if event.clickCount >= 2 {
+      close()
+      return
+    }
     alphaValue = min(opacity, currentScreenshotSettings.movingOpacity)
     super.mouseDown(with: event)
   }
 
   override func mouseUp(with event: NSEvent) {
     alphaValue = opacity
-    if event.clickCount >= 2 { close() }
   }
 
   /// ⌘W・Escape・ダブルクリック・メニューの、すべての閉じる経路が通る。
@@ -180,10 +183,6 @@ final class FloatingWindow: NSWindow {
 
   @objc private func performMenuItem(_ sender: NSMenuItem) {
     if let command = sender.representedObject as? FloatingCommand { perform(command) }
-  }
-
-  @objc private func restoreOpacity() {
-    alphaValue = opacity
   }
 
   private func perform(_ command: FloatingCommand) {
