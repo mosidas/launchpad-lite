@@ -7,17 +7,18 @@ import AppKit
 
   /// 範囲を選ばせて撮り、撮った画像を浮かべる。画面収録が許可されていなければ許可を求める。
   func capture() {
-    guard CGPreflightScreenCaptureAccess() else {
-      NSLog("%@", "LaunchpadLite: 画面収録が許可されていない")
-      askForScreenCaptureAccess()
-      return
-    }
-    // shortcut: 撮影中の再押下は無視, screencapture が戻らない事象を観測したら再押下で前の撮影を終了させる
+    // shortcut: 撮影中と許可のアラートの表示中の再押下は無視, screencapture が戻らない事象を観測したら再押下で前の撮影を終了させる
     guard !isCapturing else {
       NSLog("%@", "LaunchpadLite: 撮影中なので無視した")
       return
     }
     isCapturing = true
+    guard CGPreflightScreenCaptureAccess() else {
+      NSLog("%@", "LaunchpadLite: 画面収録が許可されていない")
+      askForScreenCaptureAccess()
+      isCapturing = false
+      return
+    }
     Task { @MainActor in
       defer { isCapturing = false }
       do {
@@ -30,9 +31,14 @@ import AppKit
     }
   }
 
-  /// 一覧から外す。最後の 1 枚を閉じ、設定ウィンドウも出ていなければ、前面を直前のアプリへ返す。
+  /// 一覧から外す。
   func remove(_ window: FloatingWindow) {
     windows.removeAll { $0 === window }
+    returnFocusIfIdle()
+  }
+
+  /// 浮かべた画像が無く、設定ウィンドウも出ていなければ、前面を直前のアプリへ返す。
+  private func returnFocusIfIdle() {
     if windows.isEmpty, settingsWindow?.isVisible != true { NSApp.hide(nil) }
   }
 
@@ -65,7 +71,10 @@ import AppKit
       "システム設定の「プライバシーとセキュリティ」にある画面収録の項目で LaunchpadLite を許可してから、LaunchpadLite を開き直してください。"
     alert.addButton(withTitle: "システム設定を開く")
     alert.addButton(withTitle: "キャンセル")
-    guard alert.runModal() == .alertFirstButtonReturn else { return }
+    guard alert.runModal() == .alertFirstButtonReturn else {
+      returnFocusIfIdle()
+      return
+    }
     // 一度要求すると、システム設定の画面収録の一覧に LaunchpadLite が載る。
     _ = CGRequestScreenCaptureAccess()
     if let url = URL(

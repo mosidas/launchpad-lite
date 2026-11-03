@@ -9,6 +9,8 @@ import Testing
   #expect(FloatingCommand(characters: "w", modifiers: .command) == .close)
   #expect(FloatingCommand(characters: "c", modifiers: []) == nil)
   #expect(FloatingCommand(characters: "x", modifiers: .command) == nil)
+  #expect(FloatingCommand(characters: "c", modifiers: [.command, .option]) == nil)
+  #expect(FloatingCommand(characters: "w", modifiers: [.command, .control]) == nil)
 }
 
 @Test func commandZoomsWithPlusEqualsSemicolonAndMinus() {
@@ -21,6 +23,7 @@ import Testing
 
 @Test func escapeClosesWithoutModifiers() {
   #expect(FloatingCommand(characters: "\u{1b}", modifiers: []) == .close)
+  #expect(FloatingCommand(characters: "\u{1b}", modifiers: .command) == nil)
 }
 
 @Test func zoomLevelStopsAt250And25Percent() {
@@ -38,7 +41,7 @@ import Testing
 
 @Test func scaledFrameKeepsCenter() {
   let original = CGRect(x: 100, y: 100, width: 200, height: 100)
-  #expect(frame(original, scaledTo: 0) == original)
-  #expect(frame(original, scaledTo: 2) == CGRect(x: 50, y: 75, width: 300, height: 150))
-  #expect(frame(original, scaledTo: -2) == CGRect(x: 150, y: 125, width: 100, height: 50))
+  #expect(zoomedFrame(original, level: 0) == original)
+  #expect(zoomedFrame(original, level: 2) == CGRect(x: 50, y: 75, width: 300, height: 150))
+  #expect(zoomedFrame(original, level: -2) == CGRect(x: 150, y: 125, width: 100, height: 50))
 }

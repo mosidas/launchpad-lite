@@ -68,7 +68,7 @@ func scrolledOpacity(_ opacity: CGFloat, deltaY: CGFloat) -> CGFloat {
 }
 
 /// original を段階 level の倍率(1 + 0.25 × level)で、中心を保って拡縮した矩形。
-func frame(_ original: CGRect, scaledTo level: Int) -> CGRect {
+func zoomedFrame(_ original: CGRect, level: Int) -> CGRect {
   let scale = 1 + 0.25 * CGFloat(level)
   let width = original.width * scale
   let height = original.height * scale
@@ -207,7 +207,7 @@ final class FloatingWindow: NSWindow {
     let base = CGRect(
       x: frame.midX - originalFrame.width / 2, y: frame.midY - originalFrame.height / 2,
       width: originalFrame.width, height: originalFrame.height)
-    setFrame(LaunchpadLite.frame(base, scaledTo: level), display: true, animate: true)
+    setFrame(zoomedFrame(base, level: level), display: true, animate: true)
   }
 
   private func setSpaceMode(_ mode: SpaceMode) {
@@ -240,15 +240,15 @@ final class FloatingWindow: NSWindow {
       let destination = CGImageDestinationCreateWithURL(
         url as CFURL, UTType.png.identifier as CFString, 1, nil)
     else {
-      reportSaveFailure()
+      reportSaveFailure(step: "create")
       return
     }
     CGImageDestinationAddImage(destination, image, nil)
-    if !CGImageDestinationFinalize(destination) { reportSaveFailure() }
+    if !CGImageDestinationFinalize(destination) { reportSaveFailure(step: "finalize") }
   }
 
-  private func reportSaveFailure() {
-    NSLog("%@", "LaunchpadLite: 画像を保存できなかった")
+  private func reportSaveFailure(step: String) {
+    NSLog("%@", "LaunchpadLite: 画像を保存できなかった step=\(step)")
     showFailureAlert(
       title: "画像を保存できませんでした", message: "保存先に書き込めるかを確かめて、もう一度お試しください。")
   }
