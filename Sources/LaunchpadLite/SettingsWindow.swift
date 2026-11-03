@@ -45,6 +45,7 @@ func showSettings() {
     }()
   // 開くたびにビューを作り直し、保存値を読み直す。
   // 内容の大きさにウィンドウを合わせると、ページを切り替えるたびにウィンドウの大きさが変わるため、最小の大きさだけを伝える。
+  // どのページも初期の幅に収まるので(注記は SettingsNote で折り返す)、最小の大きさがウィンドウを広げることはない。
   let hosting = NSHostingView(rootView: SettingsRootView())
   hosting.sizingOptions = [.minSize]
   window.contentView = hosting
@@ -60,13 +61,30 @@ private struct SettingsRootView: View {
   var body: some View {
     NavigationSplitView(columnVisibility: .constant(.all)) {
       List(settingsPages, selection: $selection) { Label($0.title, systemImage: $0.systemImage) }
+        // ⌘クリックで選択を外されたら、最後に選んでいたページを選び直す。
+        // Binding の set で nil を捨てるだけでは、状態が変わらずサイドバーの選択の表示が消えたままになる。
+        .onChange(of: selection) { old, new in if new == nil { selection = old } }
         .navigationSplitViewColumnWidth(min: 160, ideal: 180, max: 220)
         .toolbar(removing: .sidebarToggle)
     } detail: {
-      ScrollView {
-        (settingsPages.first { $0.id == selection } ?? settingsPages[0]).content()
-      }
+      let page = settingsPages.first { $0.id == selection } ?? settingsPages[0]
+      // 同じ型のビューのページどうしでも、切り替えで状態を作り直し、.onDisappear を呼ぶ。
+      ScrollView { page.content().id(page.id) }
     }
+  }
+}
+
+/// ページの下に置く注記。長い文でもページの幅を広げないよう、決まった幅で折り返す。
+/// 幅を上限(maxWidth)にすると、高さが 1 行分で決まり、折り返した行が下の要素に重なる。
+struct SettingsNote: View {
+  let text: String
+
+  init(_ text: String) { self.text = text }
+
+  var body: some View {
+    Text(text).font(.caption).foregroundStyle(.secondary)
+      .fixedSize(horizontal: false, vertical: true)
+      .frame(width: 360, alignment: .leading)
   }
 }
 
@@ -94,8 +112,7 @@ private struct HotKeySettingsView: View {
           }
         }
       }
-      Text("⌘・⌃・⌥ のいずれかを含むキーを受け付ける。Escape で取り消す。")
-        .font(.caption).foregroundStyle(.secondary)
+      SettingsNote("⌘・⌃・⌥ のいずれかを含むキーを受け付ける。Escape で取り消す。")
       Button("既定に戻す") {
         stopRecording()
         for action in HotKeyAction.allCases { saveKeyCombo(nil, for: action) }

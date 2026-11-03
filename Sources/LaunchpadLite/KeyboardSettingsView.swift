@@ -64,10 +64,9 @@ struct KeyboardSettingsView: View {
           }
         }
       }
-      Text(
+      SettingsNote(
         "F キーの割り当ては修飾キーの無い押下だけに効く。キーの入力中は修飾キーの無いキーも受け付け、F キーは Escape で取り消す。置き換えでは Caps Lock・修飾キー・Escape も押せ、記録中のボタンをもう一度押すと取り消す。キーの置き換えは LaunchpadLite を終了すると解除する。"
       )
-      .font(.caption).foregroundStyle(.secondary)
       Button("既定に戻す") {
         stopRecording()
         saveKeyboardSettings(nil)
@@ -81,7 +80,7 @@ struct KeyboardSettingsView: View {
       currentKeyboardSettings = settings
       applyKeyRemaps(settings)
     }
-    // MouseSettingsView と同じく、閉じる・他のアプリへ切り替える・タブを離れるときに記録を終える。
+    // MouseSettingsView と同じく、閉じる・他のアプリへ切り替える・ページを離れるときに記録を終える。
     .onDisappear { stopRecording() }
     .onReceive(
       NotificationCenter.default.publisher(

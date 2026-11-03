@@ -87,8 +87,7 @@ struct MouseSettingsView: View {
           }
         }
       }
-      Text("ボタンはこのウィンドウの上で押す。キーの入力中は修飾キーの無いキーも受け付ける。Escape で取り消す。")
-        .font(.caption).foregroundStyle(.secondary)
+      SettingsNote("ボタンはこのウィンドウの上で押す。キーの入力中は修飾キーの無いキーも受け付ける。Escape で取り消す。")
       Button("既定に戻す") {
         stopRecording()
         recordedButtons = []
@@ -104,7 +103,7 @@ struct MouseSettingsView: View {
       currentMouseSettings = settings
       applyPointerSettings(settings)
     }
-    // SettingsView と同じく、閉じる・他のアプリへ切り替える・タブを離れるときに記録を終える。
+    // HotKeySettingsView と同じく、閉じる・他のアプリへ切り替える・ページを離れるときに記録を終える。
     .onDisappear { stopRecording() }
     .onReceive(
       NotificationCenter.default.publisher(
