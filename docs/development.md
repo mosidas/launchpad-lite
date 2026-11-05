@@ -1,7 +1,5 @@
 # ビルドとテストの補足
 
-`scripts/bundle.sh` と `scripts/test.sh` の動作のうち、開発で知っておくことを説明する。ビルドするには、[launchpad-lite の README](../README.md) の「ソースからビルドする」の手順を実行する。
-
 ## ビルド
 
 - `scripts/bundle.sh` は release ビルド、`.app` の組み立て、アドホック署名を行う。
@@ -16,4 +14,4 @@
 ## swift run で動かすとき
 
 - 権限は LaunchpadLite ではなく、実行したターミナルに付く。
-- 「ログイン時に起動」の切り替えはエラーになる([LaunchpadLite の機能と設定](features.md) の「ログイン時の起動」)。
+- 「ログイン時に起動」の切り替えはエラーになる。`.app` から起動したときだけ働く。
